@@ -140,17 +140,15 @@ res://addons/network_logger/
     └── project_settings.gd
 ```
 
-## 7. 実装ステップ (Phase 1)
+## 7. 実装の概要
 
-1.  **ファイル作成**: 上記ファイル構造に従い、空のGDScriptファイルを作成する。
-2.  **`plugin.cfg` 設定**: 要件定義書通りに設定する。
-3.  **`plugin.gd` 実装**: `_enter_tree` と `_exit_tree` の基本的なロジックを実装し、アドオンがGodotエディタで有効/無効にできることを確認する。
-4.  **`NetworkLogger` シングルトン設定**: `_enable_plugin` で `NetworkLogger` をAutoLoadに登録する処理を実装する。
-5.  **`UDPSender` 実装**: `setup` と `send` の基本的なUDP送信機能を実装する。
-6.  **`NetworkLogger` API実装**: `setup` と `log` 系の基本的な関数を実装する。この段階では、`log` は直接 `UDPSender.send` を呼び出すシンプルな実装で良い。
-7.  **テスト**: Godotプロジェクトから `NetworkLogger.setup()` と `NetworkLogger.log()` を呼び出し、`log_receiver.py` でログが受信できることを確認する。
-8.  **`LogBuffer` 実装**: レート制限機能を持つ `LogBuffer` を実装する。
-9.  **`NetworkLogger` と `LogBuffer` の統合**: `NetworkLogger` が `LogBuffer` を経由してログを送信するように修正する。
-10. **プロジェクト設定**: `ProjectSettings` クラスを実装し、`NetworkLogger` が `host` や `port` をプロジェクト設定から読み込めるようにする。
-11. **ホットキー実装**: `plugin.gd` の `_input` でホットキーを処理し、ログの有効/無効を切り替えられるようにする。
-12. **ドキュメントとテスト**: READMEを作成し、最終テストを行う。
+実装は `docs/WORK_PLAN.md` に定義されたタスクリストに従い、テスト駆動開発（TDD）で進める。主な実装の流れは以下の通り。
+
+1.  **アドオン基本設定:** Godotにプラグインとして認識させるための基本ファイル (`plugin.cfg`, `plugin.gd`) を作成する。
+2.  **テスト環境構築:** TDDの基盤となるGUT (Godot Unit Test) をセットアップする。
+3.  **非同期送信コンポーネントの実装:** `ThreadSafeQueue`, `UDPSender`, `LogProcessingThread` をTDDサイクルに従って個別に実装・テストする。
+4.  **コアAPIの実装:** すべてのコンポーネントを統合し、`NetworkLogger` の主要なAPIを実装する。
+5.  **機能拡張:** プロジェクト設定、ログレベルフィルタリング、フォールバック機能などをTDDで追加実装する。
+6.  **エディタ連携とドキュメント作成:** ホットキーを実装し、最終的なドキュメントを整備する。
+
+詳細なタスクと進捗については、`docs/WORK_PLAN.md` を参照すること。
