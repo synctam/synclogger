@@ -105,10 +105,10 @@ SyncLogger.set_mode(LoggingMode.DEVELOPMENT)
 
 ```bash
 # Run all tests
-../bin/godot --headless -s addons/gut/gut_cmdln.gd
+../bin/godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests -gexit
 
 # Run specific test
-../bin/godot --headless -s addons/gut/gut_cmdln.gd -gsource:res://tests/test_specific.gd
+../bin/godot --headless -s addons/gut/gut_cmdln.gd -gtest=res://tests/test_specific.gd -gexit
 
 # Development tools (installed):
 # Lint code
