@@ -96,8 +96,7 @@ SyncLogger.set_mode(LoggingMode.DEVELOPMENT)
 ## Important Files
 
 - `docs/WORK_PLAN.md`: Detailed task breakdown and progress tracking
-- `docs/DESIGN.md`: Technical architecture and implementation details
-- `docs/synclogger_requirements.md`: Complete feature requirements
+- `docs/synclogger_requirements.md`: Complete feature requirements and technical specifications
 - `docs/DEVELOPMENT_POLICY.md`: TDD methodology and coding standards
 
 ## Development Commands
