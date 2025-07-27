@@ -1,0 +1,33 @@
+# Godot 4 specific files
+.godot/
+.import/
+
+# Godot generated files
+export_presets.cfg
+override.cfg
+project.godot.tmp
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# External tools (not part of our codebase)
+addons/gut/
+
+# Build outputs
+build/
+dist/
+*.zip
+
+# Logs
+*.log
+user://
