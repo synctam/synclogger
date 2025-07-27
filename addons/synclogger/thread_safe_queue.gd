@@ -29,3 +29,10 @@ func is_empty() -> bool:
 	var empty = _queue.is_empty()
 	_mutex.unlock()
 	return empty
+
+
+func size() -> int:
+	_mutex.lock()
+	var queue_size = _queue.size()
+	_mutex.unlock()
+	return queue_size

@@ -50,3 +50,16 @@ func test_queue_is_fifo():
 	assert_eq(queue.pop(), "first", "FIFO: 最初にpushしたものが最初にpopされる")
 	assert_eq(queue.pop(), "second", "FIFO: 2番目にpushしたものが2番目にpopされる")
 	assert_eq(queue.pop(), "third", "FIFO: 3番目にpushしたものが3番目にpopされる")
+
+
+func test_queue_size():
+	assert_eq(queue.size(), 0, "空のキューのサイズは0")
+	
+	queue.push("item1")
+	assert_eq(queue.size(), 1, "1つ追加後のサイズは1")
+	
+	queue.push("item2")
+	assert_eq(queue.size(), 2, "2つ追加後のサイズは2")
+	
+	queue.pop()
+	assert_eq(queue.size(), 1, "1つ取り出し後のサイズは1")
