@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Godot SyncLogger addon** project currently in **planning phase**. The goal is to create a real-time UDP-based logging system for Godot 4.x games that sends logs over the network without blocking the main game loop.
+This is a **Godot SyncLogger addon** project currently in **planning phase**. The goal is to create a real-time UDP-based logging system for Godot 4.4.1-stable games that sends logs over the network without blocking the main game loop.
 
 ## Development Status
 
@@ -101,15 +101,14 @@ SyncLogger.set_mode(LoggingMode.DEVELOPMENT)
 
 ## Development Commands
 
-**Note**: Project is in planning phase. These commands will be available after initial setup:
+**Godot実行ファイル**: `/mnt/h/devs/godot/bin/godot` (Godot 4.4.1-stable)
 
 ```bash
-# After GUT installation (planned):
 # Run all tests
-godot --headless -s addons/gut/gut_cmdln.gd
+../bin/godot --headless -s addons/gut/gut_cmdln.gd
 
 # Run specific test
-godot --headless -s addons/gut/gut_cmdln.gd -gsource:res://tests/test_specific.gd
+../bin/godot --headless -s addons/gut/gut_cmdln.gd -gsource:res://tests/test_specific.gd
 
 # After development tools setup (planned):
 # Lint code
