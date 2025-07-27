@@ -1,8 +1,8 @@
-# Godot Network Logger 詳細設計書
+# Godot SyncLogger 詳細設計書
 
 ## 1. はじめに
 
-本ドキュメントは、`network_logger_requirements.md` に基づき、Godot Network Loggerアドオンの具体的な実装に関する詳細設計を定義する。
+本ドキュメントは、`synclogger_requirements.md` に基づき、Godot SyncLoggerアドオンの具体的な実装に関する詳細設計を定義する。
 
 ## 2. 全体アーキテクチャ（改訂案）
 
@@ -50,7 +50,7 @@
 
 ## 3. クラス設計（改訂案）
 
-### 3.1 `NetworkLogger` (network_logger.gd)
+### 3.1 `SyncLogger` (synclogger.gd)
 
 **プロパティ:**
 - `_log_thread: LogProcessingThread`: ログ処理スレッドのインスタンス。
@@ -94,15 +94,15 @@
 - `pop()`: `_mutex.lock()` を呼び出してから `_queue.pop_front()` を実行し、`_mutex.unlock()` する。`null` を返す可能性あり。
 - `is_empty()`: キューが空かどうかを返す。
 
-### 3.5 `NetworkLoggerPlugin` (plugin.gd)
+### 3.5 `SyncLoggerPlugin` (plugin.gd)
 
 **メソッド:**
 - `_unhandled_input(event: InputEvent)`: ホットキー処理を `_input` からこちらに変更。ゲーム内UIとの競合を避ける。
 
 ## 4. データフロー（改訂案）
 
-1.  **ユーザーコード**が `NetworkLogger.info("...")` を呼び出す。
-2.  `NetworkLogger` はログ辞書を作成し、`ThreadSafeQueue.push()` でキューに追加する。**（メインスレッドの処理はここで完了）**
+1.  **ユーザーコード**が `SyncLogger.info("...")` を呼び出す。
+2.  `SyncLogger` はログ辞書を作成し、`ThreadSafeQueue.push()` でキューに追加する。**（メインスレッドの処理はここで完了）**
 3.  **`LogProcessingThread`** は自身のループ内で `ThreadSafeQueue.pop()` を呼び出し、ログを取得する。
 4.  取得したログを `UDPSender.send()` に渡してネットワーク送信を試みる。
 5.  送信に失敗した場合、ワーカースレッド内で直接フォールバックファイルに書き込む。
@@ -121,7 +121,7 @@
 - **`TEST` モード:** `min_level` を `LogLevel.DEBUG` に設定。
 - **`SILENT` モード:** `NetworkLogger.set_enabled(false)` と等価。
 
-このマッピングは `NetworkLogger.set_mode()` が呼び出された際に適用される。
+このマッピングは `SyncLogger.set_mode()` が呼び出された際に適用される。
 
 ## 7. 受信側スクリプトの考慮事項
 
@@ -130,10 +130,10 @@
 ## 6. ファイル構造
 
 ```
-res://addons/network_logger/
+res://addons/synclogger/
 ├── plugin.cfg
 ├── plugin.gd
-├── network_logger.gd
+├── synclogger.gd
 ├── udp_sender.gd
 ├── log_buffer.gd
 └── settings/
@@ -147,7 +147,7 @@ res://addons/network_logger/
 1.  **アドオン基本設定:** Godotにプラグインとして認識させるための基本ファイル (`plugin.cfg`, `plugin.gd`) を作成する。
 2.  **テスト環境構築:** TDDの基盤となるGUT (Godot Unit Test) をセットアップする。
 3.  **非同期送信コンポーネントの実装:** `ThreadSafeQueue`, `UDPSender`, `LogProcessingThread` をTDDサイクルに従って個別に実装・テストする。
-4.  **コアAPIの実装:** すべてのコンポーネントを統合し、`NetworkLogger` の主要なAPIを実装する。
+4.  **コアAPIの実装:** すべてのコンポーネントを統合し、`SyncLogger` の主要なAPIを実装する。
 5.  **機能拡張:** プロジェクト設定、ログレベルフィルタリング、フォールバック機能などをTDDで追加実装する。
 6.  **エディタ連携とドキュメント作成:** ホットキーを実装し、最終的なドキュメントを整備する。
 

@@ -1,4 +1,4 @@
-# Godot Network Logger アドオン 要件定義書
+# Godot SyncLogger アドオン 要件定義書
 
 ## 1. プロジェクト概要
 
@@ -27,12 +27,12 @@
 
 #### 2.1.2 基本ログAPI
 ```gdscript
-NetworkLogger.setup("192.168.1.100", 9999)  # 設定
-NetworkLogger.log("メッセージ")              # 基本送信
-NetworkLogger.debug("デバッグ情報")          # レベル別送信
-NetworkLogger.info("情報")
-NetworkLogger.warning("警告")
-NetworkLogger.error("エラー")
+SyncLogger.setup("192.168.1.100", 9999)  # 設定
+SyncLogger.log("メッセージ")              # 基本送信
+SyncLogger.debug("デバッグ情報")          # レベル別送信
+SyncLogger.info("情報")
+SyncLogger.warning("警告")
+SyncLogger.error("エラー")
 ```
 
 #### 2.1.3 Godot統合機能
@@ -73,10 +73,10 @@ NetworkLogger.error("エラー")
 
 ### 3.1 システム構成
 ```
-res://addons/network_logger/
+res://addons/synclogger/
 ├── plugin.cfg                 # プラグイン設定
 ├── plugin.gd                  # プラグインメイン
-├── network_logger.gd          # シングルトンクラス
+├── synclogger.gd          # シングルトンクラス
 ├── udp_sender.gd             # UDP送信処理
 ├── log_buffer.gd             # ログバッファ管理
 └── settings/
@@ -114,7 +114,7 @@ res://addons/network_logger/
 
 ### 4.1 基本API
 ```gdscript
-class_name NetworkLogger
+class_name SyncLogger
 extends Node
 
 # 設定
@@ -156,23 +156,23 @@ static func silent_mode() -> void
 ### 5.1 プロジェクト設定
 ```gdscript
 # 基本設定
-network_logger/enabled: true
-network_logger/host: "localhost"
-network_logger/port: 9999
+synclogger/enabled: true
+synclogger/host: "localhost"
+synclogger/port: 9999
 
 # パフォーマンス設定
-network_logger/max_logs_per_second: 30
-network_logger/sampling_rate: 1.0
-network_logger/min_level: LogLevel.INFO
+synclogger/max_logs_per_second: 30
+synclogger/sampling_rate: 1.0
+synclogger/min_level: LogLevel.INFO
 
 # フォールバック設定
-network_logger/fallback_enabled: true
-network_logger/fallback_file: "user://network_log_fallback.txt"
+synclogger/fallback_enabled: true
+synclogger/fallback_file: "user://sync_log_fallback.txt"
 
 # ゲーム特化設定
-network_logger/include_frame_info: true
-network_logger/include_performance_info: true
-network_logger/auto_disable_on_lag: true
+synclogger/include_frame_info: true
+synclogger/include_performance_info: true
+synclogger/auto_disable_on_lag: true
 ```
 
 ### 5.2 ログレベル
@@ -219,11 +219,11 @@ enum LoggingMode {
 ### 6.3 ホットキー設定
 ```gdscript
 # プロジェクト設定でカスタマイズ可能
-network_logger/hotkeys_enabled: true
-network_logger/hotkey_toggle: "Ctrl+Shift+L"
-network_logger/hotkey_test_mode: "Ctrl+Shift+T"
-network_logger/hotkey_emergency_stop: "Ctrl+Shift+X"
-network_logger/hotkeys_in_release: false  # リリース版で無効化
+synclogger/hotkeys_enabled: true
+synclogger/hotkey_toggle: "Ctrl+Shift+L"
+synclogger/hotkey_test_mode: "Ctrl+Shift+T"
+synclogger/hotkey_emergency_stop: "Ctrl+Shift+X"
+synclogger/hotkeys_in_release: false  # リリース版で無効化
 ```
 
 ## 7. 受信側システム仕様

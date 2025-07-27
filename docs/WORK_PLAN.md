@@ -1,15 +1,15 @@
 # 作業計画書
 
-本ドキュメントは Godot Network Logger アドオンの開発タスクを管理し、進捗を追跡するためのものです。
+本ドキュメントは Godot SyncLogger アドオンの開発タスクを管理し、進捗を追跡するためのものです。
 完了したタスクには `[x]` を付けます。
 
 ## Phase 1: MVP (Minimum Viable Product) の完成
 
 ### 1. プロジェクトとアドオンの基本設定
-- [ ] `addons/network_logger` ディレクトリ構造の作成
+- [ ] `addons/synclogger` ディレクトリ構造の作成
 - [ ] `plugin.cfg` ファイルの作成と設定
 - [ ] `plugin.gd` の基本構造（`_enter_tree`, `_exit_tree`）を作成
-- [ ] `network_logger.gd` をシングルトンとして AutoLoad に登録・解除するロジックを `plugin.gd` に実装
+- [ ] `synclogger.gd` をシングルトンとして AutoLoad に登録・解除するロジックを `plugin.gd` に実装
 - [ ] **[手動テスト]** Godotエディタでアドオンを有効化・無効化できることを確認
 
 ### 2. テスト環境の構築
@@ -34,9 +34,9 @@
     - [ ] **[Refactor]** コードをリファクタリング
 
 ### 4. コアAPIの実装 (TDD)
-- [ ] **[Test]** `NetworkLogger.log()` を呼び出すと、ログが `ThreadSafeQueue` に追加されることを確認するテストを作成 (Red)
-- [ ] **[Impl]** `network_logger.gd` に `setup`, `log`, `info`, `error` 等のAPIを実装 (Green)
-- [ ] **[Impl]** `NetworkLogger` の初期化時に `LogProcessingThread` を起動する処理を実装
+- [ ] **[Test]** `SyncLogger.log()` を呼び出すと、ログが `ThreadSafeQueue` に追加されることを確認するテストを作成 (Red)
+- [ ] **[Impl]** `synclogger.gd` に `setup`, `log`, `info`, `error` 等のAPIを実装 (Green)
+- [ ] **[Impl]** `SyncLogger` の初期化時に `LogProcessingThread` を起動する処理を実装
 - [ ] **[Refactor]** コードをリファクタリング
 - [ ] **[手動テスト]** `log_receiver.py` を作成し、Godotから送信したログが受信できることを確認
 
@@ -44,11 +44,11 @@
 - #### 5.1 プロジェクト設定
     - [ ] **[Test]** `ProjectSettings` クラスが設定の読み書きを行えることを確認するテストを作成 (Red)
     - [ ] **[Impl]** `settings/project_settings.gd` を実装 (Green)
-    - [ ] **[Impl]** `NetworkLogger` が起動時に `host` や `port` をプロジェクト設定から読み込むようにする
+    - [ ] **[Impl]** `SyncLogger` が起動時に `host` や `port` をプロジェクト設定から読み込むようにする
 
 - #### 5.2 ログレベルとカテゴリ
     - [ ] **[Test]** `min_level` に基づいてログがフィルタリングされることを確認するテストを作成 (Red)
-    - [ ] **[Impl]** `NetworkLogger` にログレベルのフィルタリング機能を実装 (Green)
+    - [ ] **[Impl]** `SyncLogger` にログレベルのフィルタリング機能を実装 (Green)
 
 - #### 5.3 フォールバック機能
     - [ ] **[Test]** ネットワーク送信失敗時にログがファイルに書き込まれることを確認するテストを作成 (Red)
