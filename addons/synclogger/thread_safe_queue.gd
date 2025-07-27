@@ -4,13 +4,16 @@ extends RefCounted
 var _queue: Array = []
 var _mutex: Mutex
 
+
 func _init():
 	_mutex = Mutex.new()
+
 
 func push(item) -> void:
 	_mutex.lock()
 	_queue.append(item)
 	_mutex.unlock()
+
 
 func pop():
 	_mutex.lock()
@@ -19,6 +22,7 @@ func pop():
 		result = _queue.pop_front()
 	_mutex.unlock()
 	return result
+
 
 func is_empty() -> bool:
 	_mutex.lock()

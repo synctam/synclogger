@@ -110,12 +110,12 @@ SyncLogger.set_mode(LoggingMode.DEVELOPMENT)
 # Run specific test
 ../bin/godot --headless -s addons/gut/gut_cmdln.gd -gsource:res://tests/test_specific.gd
 
-# After development tools setup (planned):
+# Development tools (installed):
 # Lint code
-gdlinter addons/synclogger/
+~/.local/bin/gdlint addons/synclogger/ tests/
 
 # Format code  
-gdformat addons/synclogger/
+~/.local/bin/gdformat addons/synclogger/ tests/
 ```
 
 ## Performance Requirements
