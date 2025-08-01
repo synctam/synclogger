@@ -25,7 +25,9 @@
 - JSON形式でのデータ送信
 - 送信失敗時のローカルファイルフォールバック
 
-#### 2.1.2 基本ログAPI
+#### 2.1.2 実装済み基本ログAPI
+
+**AutoLoad版（SyncLogger）- スレッド問題あり**
 ```gdscript
 SyncLogger.setup("192.168.1.100", 9999)  # 設定
 SyncLogger.log("メッセージ")              # 基本送信
@@ -33,6 +35,19 @@ SyncLogger.debug("デバッグ情報")          # レベル別送信
 SyncLogger.info("情報")
 SyncLogger.warning("警告")
 SyncLogger.error("エラー")
+await SyncLogger.shutdown()              # 安全な終了処理
+```
+
+**MainThreadSimpleLogger版（推奨・安定版）**
+```gdscript
+const MainThreadSimpleLogger = preload("res://addons/synclogger/mainthread_simple_logger.gd")
+var logger = MainThreadSimpleLogger.new()
+logger.setup("127.0.0.1", 9998)         # 設定
+logger.log("メッセージ", "category")      # カテゴリ付きログ
+logger.debug("デバッグ情報")              # レベル別送信
+logger.info("情報")
+logger.warning("警告")  
+logger.error("エラー")
 ```
 
 #### 2.1.3 Godot統合機能
@@ -364,6 +379,44 @@ python log_receiver.py
 
 ---
 
+## 12. 実装完了状況（2024年末時点更新）
+
+### 12.1 ✅ Phase 1 MVP完成
+- **スレッドベースUDPログシステム**: 完全実装済み
+- **全テスト成功**: 33テスト全て成功（テスト駆動開発実施）
+- **実際のUDP通信確認**: Python受信スクリプトで動作確認済み
+
+### 12.2 🚀 MainThreadSimpleLogger追加開発
+- **安定版ロガー**: メインスレッドで即座UDP送信
+- **UDPSender修正**: 接続問題解決済み
+- **TDD実施**: Red-Green-Refactorサイクル完遂
+- **統合テスト成功**: 実際のログ送受信確認済み
+
+### 12.3 ⚠️ 既知の問題と推奨事項
+- **スレッド版問題**: LogProcessingThreadでセグメンテーションフォルト
+- **現在の推奨**: MainThreadSimpleLoggerを使用
+- **将来対応**: スレッド問題解決後にスレッド版を本格運用
+
+### 12.4 📂 現在のプロジェクト構成
+```
+res://addons/synclogger/
+├── synclogger.gd (SyncLoggerMain - AutoLoad)
+├── mainthread_simple_logger.gd (推奨版)
+├── udp_sender.gd (修正済み)
+├── thread_safe_queue.gd
+├── log_processing_thread.gd (問題あり)
+└── plugin.gd/plugin.cfg
+
+demo_scene.gd/tscn (スレッド版デモ)
+demo_mainthread_simple.gd/tscn (安定版デモ)
+log_receiver.py (Python受信スクリプト)
+tests/ (33テスト全成功)
+debug/ (開発デバッグファイル)
+```
+
+---
+
 **作成日**: 2025年7月17日  
-**バージョン**: 1.0  
-**作成者**: ブレインストーミングセッション結果
+**最終更新**: 2024年末（実装完了時点）
+**バージョン**: 1.1 (実装状況反映版)
+**作成者**: ブレインストーミングセッション結果 + 実装チーム

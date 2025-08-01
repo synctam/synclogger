@@ -10,8 +10,10 @@ This is a **Godot SyncLogger addon** project currently in **planning phase**. Th
 
 ## Development Status
 
-**Current State**: Documentation and planning phase - no implementation files exist yet.
-**Next Phase**: Phase 1 (MVP) implementation using Test-Driven Development (TDD).
+**Current State**: Phase 1 MVP完成 + MainThreadSimpleLogger追加実装済み
+**Phase 1完成**: スレッドベースのリアルタイムUDPログシステム実装完了
+**追加機能**: MainThreadSimpleLogger（メインスレッド版、安定動作）
+**Next Phase**: Phase 2（機能拡張・最適化・プロダクション向け機能）
 
 ## Architecture Overview
 
@@ -66,38 +68,66 @@ All features must follow Red-Green-Refactor cycle using **GUT (Godot Unit Test)*
 4. **Godot Integration**: AutoLoad registration, project settings, hotkeys
 5. **Documentation**: README, API reference, Python receiver script
 
-### Planned Directory Structure:
+### 実装済みDirectory Structure:
 ```
 res://addons/synclogger/
-├── plugin.cfg                 # Plugin configuration
-├── plugin.gd                  # Plugin main class  
-├── synclogger.gd          # AutoLoad singleton
-├── udp_sender.gd             # UDP transmission
-├── log_thread.gd             # Worker thread
-├── thread_safe_queue.gd      # Thread-safe queue
-└── settings/
-    └── project_settings.gd    # Settings management
+├── plugin.cfg                     # Plugin configuration
+├── plugin.gd                      # Plugin main class  
+├── synclogger.gd                   # AutoLoad singleton (class_name: SyncLoggerMain)
+├── mainthread_simple_logger.gd     # メインスレッド版ロガー（安定版）
+├── udp_sender.gd                   # UDP transmission (修正済み)
+├── log_processing_thread.gd        # Worker thread (問題あり)
+├── thread_safe_queue.gd            # Thread-safe queue
+└── settings/                       # Settings management (構造のみ)
 ```
 
-## Key APIs (Planned)
+## 実装済みKey APIs
 
+### AutoLoad経由（推奨・本格運用）
 ```gdscript
-# Basic logging
+# 基本ログ送信（スレッド版・問題あり）
 SyncLogger.setup("192.168.1.100", 9999)
 SyncLogger.log("message")
 SyncLogger.info("information") 
+SyncLogger.warning("warning message")
 SyncLogger.error("error message")
-
-# Advanced features
-SyncLogger.set_min_level(LogLevel.INFO)
-SyncLogger.set_mode(LoggingMode.DEVELOPMENT)
+SyncLogger.debug("debug message")
+await SyncLogger.shutdown()  # 安全な終了処理
 ```
+
+### MainThreadSimpleLogger（安定版・推奨）
+```gdscript
+# メインスレッド版（安定動作）
+const MainThreadSimpleLogger = preload("res://addons/synclogger/mainthread_simple_logger.gd")
+var logger = MainThreadSimpleLogger.new()
+logger.setup("127.0.0.1", 9998)
+logger.log("message", "category")
+logger.info("information")
+logger.error("error message")
+```
+
+## 現在の実装状況
+
+### ✅ 完成済み機能
+- **UDPSender**: UDP通信機能（接続問題修正済み）
+- **ThreadSafeQueue**: マルチスレッド対応キュー
+- **MainThreadSimpleLogger**: メインスレッド版ロガー（**推奨**）
+- **SyncLoggerMain**: AutoLoadシングルトン（スレッド問題あり）
+- **LogProcessingThread**: ワーカースレッド（セグメンテーションフォルト問題）
+- **テストスイート**: 33テスト全成功
+- **デモシーン**: 2種類（スレッド版・メインスレッド版）
+- **log_receiver.py**: Python受信スクリプト
+
+### ⚠️ 既知の問題
+- **スレッド版**: セグメンテーションフォルト発生
+- **推奨**: MainThreadSimpleLoggerを使用
 
 ## Important Files
 
 - `docs/WORK_PLAN.md`: Detailed task breakdown and progress tracking
-- `docs/synclogger_requirements.md`: Complete feature requirements and technical specifications
+- `docs/synclogger_requirements.md`: Complete feature requirements and technical specifications  
 - `docs/DEVELOPMENT_POLICY.md`: TDD methodology and coding standards
+- `debug/README.md`: 開発中のデバッグファイル説明
 
 ## Development Commands
 
