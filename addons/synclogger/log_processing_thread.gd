@@ -37,7 +37,7 @@ func start() -> bool:
 	_should_stop = false
 	_is_running = true
 
-	var result = _thread.start(_thread_worker)
+	var result = _thread.start(_thread_worker.bind())
 	if result != OK:
 		_is_running = false
 		return false
@@ -61,11 +61,11 @@ func is_running() -> bool:
 
 func _thread_worker() -> void:
 	while not _should_stop:
-		if _queue and not _queue.is_empty():
+		if _queue:
 			var log_data = _queue.pop()
 			if log_data and _udp_sender:
 				var json_string = JSON.stringify(log_data)
 				_udp_sender.send(json_string)
 
 		# 短時間スリープしてCPU使用率を下げる
-		OS.delay_msec(1)
+		OS.delay_usec(1000)  # 1ms = 1000 microseconds
