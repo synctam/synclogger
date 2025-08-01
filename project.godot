@@ -1,6 +1,10 @@
 ; Engine configuration file.
 ; It's best edited using the editor UI and not directly,
-; unless you know what you are doing.
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
 
 config_version=5
 
@@ -8,6 +12,14 @@ config_version=5
 
 config/name="SyncLogger"
 config/features=PackedStringArray("4.4", "GL Compatibility")
+
+[autoload]
+
+SyncLogger="*res://addons/synclogger/synclogger.gd"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/synclogger/plugin.cfg")
 
 [rendering]
 
