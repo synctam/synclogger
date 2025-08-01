@@ -32,12 +32,18 @@ func send(data: String) -> bool:
 	if _host.is_empty() or _port <= 0:
 		return false
 
+	# UDP接続をリセットして再接続（毎回新しい接続を作成）
+	_udp_socket.close()
+	
 	var result = _udp_socket.connect_to_host(_host, _port)
 	if result != OK:
 		return false
 
 	var bytes = data.to_utf8_buffer()
 	var sent = _udp_socket.put_packet(bytes)
+	
+	# 送信後に接続をクリーンアップ
+	_udp_socket.close()
 
 	return sent == OK
 
