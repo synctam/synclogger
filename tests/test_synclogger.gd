@@ -1,9 +1,10 @@
 extends GutTest
 
-var synclogger: SyncLogger
+const SyncLoggerMain = preload("res://addons/synclogger/synclogger.gd")
+var synclogger: SyncLoggerMain
 
 func before_each():
-	synclogger = SyncLogger.new()
+	synclogger = SyncLoggerMain.new()
 
 func after_each():
 	if synclogger:

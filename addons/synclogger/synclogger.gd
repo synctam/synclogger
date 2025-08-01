@@ -1,4 +1,4 @@
-class_name SyncLogger
+class_name SyncLoggerMain
 extends Node
 
 var _queue: ThreadSafeQueue
@@ -88,6 +88,8 @@ func _create_log_data(message: String, level: String, category: String) -> Dicti
 	}
 
 func shutdown() -> void:
-	if _log_thread:
+	if _log_thread and _log_thread.is_running():
 		_log_thread.stop()
+		# スレッドが完全に停止するまで少し待つ
+		await get_tree().process_frame
 	_is_setup = false
