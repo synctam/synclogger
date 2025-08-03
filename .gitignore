@@ -1,7 +1,6 @@
 # Godot 4 specific files
 .godot/
 .import/
-*.uid
 
 # Godot generated files
 export_presets.cfg
