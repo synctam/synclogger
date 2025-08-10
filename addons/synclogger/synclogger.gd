@@ -5,7 +5,6 @@ extends Node
 # MainThreadSimpleLoggerベースの安定実装
 
 const MainThreadSimpleLogger = preload("res://addons/synclogger/mainthread_simple_logger.gd")
-const UDPSender = preload("res://addons/synclogger/udp_sender.gd")
 
 var _logger: MainThreadSimpleLogger
 var _host: String = ""
