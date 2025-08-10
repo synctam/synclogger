@@ -12,7 +12,9 @@ func before_each():
 	mock_udp_sender = null
 
 func after_each():
-	# RefCountedオブジェクトは自動的にメモリ管理される
+	# RefCountedオブジェクトのクリーンアップ
+	if simple_logger:
+		simple_logger.close()
 	simple_logger = null
 	mock_udp_sender = null
 

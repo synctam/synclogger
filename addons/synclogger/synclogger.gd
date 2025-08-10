@@ -81,4 +81,6 @@ func _create_log_data(message: String, level: String, category: String) -> Dicti
 # 終了処理
 func shutdown() -> void:
 	_is_setup = false
-	# MainThreadSimpleLoggerは特別な終了処理不要
+	if _logger:
+		_logger.close()
+		_logger = null

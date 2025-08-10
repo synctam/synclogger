@@ -5,11 +5,14 @@ var synclogger: SyncLoggerMain
 
 func before_each():
 	synclogger = SyncLoggerMain.new()
+	# テスト用に親ノードを設定（Orphan回避）
+	add_child_autofree(synclogger)
 
 func after_each():
 	if synclogger:
 		synclogger.shutdown()
-		synclogger = null
+	# add_child_autofreeが自動的に解放するのでqueue_freeは不要
+	synclogger = null
 
 func test_can_create_synclogger():
 	assert_not_null(synclogger, "SyncLoggerが作成できる")
