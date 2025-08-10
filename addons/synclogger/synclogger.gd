@@ -4,8 +4,6 @@ extends Node
 # SyncLogger - Godot用UDPログ送信システム
 # MainThreadSimpleLoggerベースの安定実装
 
-const MainThreadSimpleLogger = preload("res://addons/synclogger/mainthread_simple_logger.gd")
-
 var _logger: MainThreadSimpleLogger
 var _host: String = ""
 var _port: int = 0
