@@ -51,9 +51,18 @@ func test_can_close_connection():
 	assert_false(result, "close後の送信は失敗する")
 
 
-func test_send_returns_false_on_invalid_host():
-	udp_sender.setup("invalid.host.name", 9999)
+func test_send_returns_false_on_invalid_parameters():
+	# 無効なポート番号でセットアップ
+	udp_sender.setup("127.0.0.1", -1)
 
 	var result = udp_sender.send("test")
 
-	assert_false(result, "無効なホストへの送信は失敗する")
+	assert_false(result, "無効なポートでの送信は失敗する")
+	
+func test_send_returns_false_on_empty_host():
+	# 空のホスト名でセットアップ
+	udp_sender.setup("", 9999)
+
+	var result = udp_sender.send("test")
+
+	assert_false(result, "空のホストでの送信は失敗する")
