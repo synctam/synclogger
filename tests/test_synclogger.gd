@@ -57,19 +57,40 @@ func test_different_log_levels():
 	synclogger._port = 9999
 	synclogger._is_setup = true
 	
+	synclogger.trace("trace message")
 	synclogger.debug("debug message")
 	synclogger.info("info message")
 	synclogger.warning("warning message")
 	synclogger.error("error message")
+	synclogger.critical("critical message")
 	
-	# 4つのメッセージがキューに追加されることを確認
-	assert_eq(synclogger.get_queue_size(), 4, "異なるログレベルのメッセージが全て追加される")
+	# 6つのメッセージがキューに追加されることを確認
+	assert_eq(synclogger.get_queue_size(), 6, "異なるログレベルのメッセージが全て追加される")
 
 func test_log_without_setup_does_nothing():
 	var result = synclogger.log("test message")
 	
 	assert_false(result, "setup前のログは失敗する")
 	assert_eq(synclogger.get_queue_size(), 0, "setup前はキューにメッセージが追加されない")
+
+func test_critical_and_trace_log_levels():
+	# 新しいログレベルのテスト
+	synclogger._host = "127.0.0.1"
+	synclogger._port = 9999
+	synclogger._is_setup = true
+	
+	# criticalレベルのテスト
+	var critical_data = synclogger._create_log_data("critical test", "critical", "test")
+	assert_eq(critical_data.level, "critical", "criticalレベルが正しく設定される")
+	
+	# traceレベルのテスト
+	var trace_data = synclogger._create_log_data("trace test", "trace", "test")
+	assert_eq(trace_data.level, "trace", "traceレベルが正しく設定される")
+	
+	# 実際のメソッド呼び出しテスト
+	synclogger.critical("critical message")
+	synclogger.trace("trace message")
+	assert_eq(synclogger.get_queue_size(), 2, "critical/traceメッセージが追加される")
 
 func test_shutdown_stops_background_thread():
 	synclogger.setup("127.0.0.1", 9999)

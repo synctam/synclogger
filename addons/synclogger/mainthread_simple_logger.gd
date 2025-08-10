@@ -40,6 +40,12 @@ func warning(message: String, category: String = "general") -> bool:
 func error(message: String, category: String = "general") -> bool:
 	return _send_log(message, "error", category)
 
+func critical(message: String, category: String = "general") -> bool:
+	return _send_log(message, "critical", category)
+
+func trace(message: String, category: String = "general") -> bool:
+	return _send_log(message, "trace", category)
+
 # 共通のログ送信処理
 func _send_log(message: String, level: String, category: String) -> bool:
 	if not _is_setup:

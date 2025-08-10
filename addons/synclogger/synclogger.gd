@@ -77,6 +77,22 @@ func error(message: String, category: String = "general") -> bool:
 	_queue.push(log_data)
 	return true
 
+func critical(message: String, category: String = "general") -> bool:
+	if not _is_setup:
+		return false
+	
+	var log_data = _create_log_data(message, "critical", category)
+	_queue.push(log_data)
+	return true
+
+func trace(message: String, category: String = "general") -> bool:
+	if not _is_setup:
+		return false
+	
+	var log_data = _create_log_data(message, "trace", category)
+	_queue.push(log_data)
+	return true
+
 func _create_log_data(message: String, level: String, category: String) -> Dictionary:
 	return {
 		"timestamp": Time.get_unix_time_from_system(),
