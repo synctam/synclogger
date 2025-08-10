@@ -17,23 +17,21 @@ This is a **Godot SyncLogger addon** project currently in **planning phase**. Th
 
 ## Architecture Overview
 
-The planned system uses a multi-threaded architecture to avoid blocking the main game loop:
+シンプルなメインスレッド実装でUDPログ送信を実現：
 
 ```
 SyncLogger (AutoLoad Singleton API)
-    ↓ (queue logs)
-ThreadSafeQueue (Mutex-protected)
-    ↓ (worker thread processes)
-LogProcessingThread (Background Thread)
+    ↓ (delegate to)
+MainThreadSimpleLogger (Main Thread)
     ↓ (sends via)
-UDPSender → Network (UDP) / Fallback to File
+UDPSender → Network (UDP)
 ```
 
 **Key Design Principles**:
-- **Non-blocking**: Main thread only queues logs, never blocks on network I/O
-- **Thread-safe**: Uses Mutex-protected queue for thread communication  
-- **Fault-tolerant**: Falls back to local file if network fails
-- **Game-optimized**: Automatically includes frame numbers, FPS, memory usage
+- **Simple**: メインスレッドのみ使用、複雑なマルチスレッド処理なし
+- **Stable**: セグメンテーションフォルト問題を回避した安定動作
+- **Immediate**: ログを即座にUDP送信（キューなし）
+- **Game-optimized**: 自動的にフレーム番号、タイムスタンプを含む
 
 ## Development Workflow
 
@@ -73,11 +71,9 @@ All features must follow Red-Green-Refactor cycle using **GUT (Godot Unit Test)*
 res://addons/synclogger/
 ├── plugin.cfg                     # Plugin configuration
 ├── plugin.gd                      # Plugin main class  
-├── synclogger.gd                   # AutoLoad singleton (class_name: SyncLoggerMain)
-├── mainthread_simple_logger.gd     # メインスレッド版ロガー（安定版）
+├── synclogger.gd                   # AutoLoad singleton (MainThreadLoggerベース)
+├── mainthread_simple_logger.gd     # メインスレッド版ロガー（コア実装）
 ├── udp_sender.gd                   # UDP transmission (修正済み)
-├── log_processing_thread.gd        # Worker thread (問題あり)
-├── thread_safe_queue.gd            # Thread-safe queue
 └── settings/                       # Settings management (構造のみ)
 ```
 
@@ -110,17 +106,17 @@ logger.error("error message")
 
 ### ✅ 完成済み機能
 - **UDPSender**: UDP通信機能（接続問題修正済み）
-- **ThreadSafeQueue**: マルチスレッド対応キュー
-- **MainThreadSimpleLogger**: メインスレッド版ロガー（**推奨**）
-- **SyncLoggerMain**: AutoLoadシングルトン（スレッド問題あり）
-- **LogProcessingThread**: ワーカースレッド（セグメンテーションフォルト問題）
-- **テストスイート**: 33テスト全成功
-- **デモシーン**: 2種類（スレッド版・メインスレッド版）
+- **MainThreadSimpleLogger**: メインスレッド版ロガー（**コア実装**）
+- **SyncLoggerMain**: AutoLoadシングルトン（MainThreadLoggerベース）
+- **ログレベル**: 6レベル対応（trace, debug, info, warning, error, critical）
+- **テストスイート**: 全テスト成功
+- **デモシーン**: メインスレッド版
 - **log_receiver.py**: Python受信スクリプト
 
-### ⚠️ 既知の問題
-- **スレッド版**: セグメンテーションフォルト発生
-- **推奨**: MainThreadSimpleLoggerを使用
+### 🎯 特徴
+- **シンプル**: キューレス、メインスレッドのみ
+- **安定**: セグメンテーションフォルト問題を解決
+- **即座送信**: ログを即座にUDP送信
 
 ## Important Files
 
