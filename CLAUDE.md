@@ -123,7 +123,6 @@ logger.error("error message")
 - `docs/WORK_PLAN.md`: Detailed task breakdown and progress tracking
 - `docs/synclogger_requirements.md`: Complete feature requirements and technical specifications  
 - `docs/DEVELOPMENT_POLICY.md`: TDD methodology and coding standards
-- `debug/README.md`: 開発中のデバッグファイル説明
 
 ## Development Commands
 

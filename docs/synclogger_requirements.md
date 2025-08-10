@@ -413,8 +413,7 @@ res://addons/synclogger/
 demo_scene.gd/tscn (スレッド版デモ)
 demo_mainthread_simple.gd/tscn (安定版デモ)
 log_receiver.py (Python受信スクリプト)
-tests/ (33テスト全成功)
-debug/ (開発デバッグファイル)
+tests/ (21テスト全成功)
 ```
 
 ---

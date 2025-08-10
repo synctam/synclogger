@@ -32,8 +32,6 @@ dist/
 *.log
 user://
 
-# Debug output files (keep debug/ folder but ignore outputs)
-debug/output/
-debug/*.log
-debug/*.txt
+# Additional debug files
+debug_*.log
 /tmp/

@@ -1,6 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://bw5q6x5dp4pjq"]
-
-[ext_resource type="Script" path="res://debug_udp_test.gd" id="1_xl7gd"]
-
-[node name="DebugUdpTest" type="Node"]
-script = ExtResource("1_xl7gd")
