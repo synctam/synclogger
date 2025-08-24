@@ -89,10 +89,12 @@ SyncLoggerは2つの実装方式があります：
 
 | レベル | 説明 | 使用例 |
 |--------|------|--------|
+| `trace` | 最詳細デバッグ | 関数呼び出し、ループ処理、詳細追跡 |
 | `debug` | デバッグ情報 | 変数値、処理フロー確認 |
 | `info` | 一般情報 | アプリケーション状態、処理完了通知 |
 | `warning` | 警告 | 非致命的エラー、性能劣化 |
 | `error` | エラー | 例外、処理失敗 |
+| `critical` | 致命的エラー | システムクラッシュ、回復不能エラー |
 
 ### 4. API使用例
 
@@ -104,11 +106,13 @@ const MainThreadSimpleLogger = preload("res://addons/synclogger/mainthread_simpl
 var logger = MainThreadSimpleLogger.new()
 logger.setup("127.0.0.1", 9998)
 
-# ログ送信
+# ログ送信（優先度順）
+logger.trace("Function entered: process_input()")
+logger.debug("Variable value: " + str(player_pos))
 logger.info("Application started")
 logger.warning("Low memory warning")
 logger.error("Failed to load resource")
-logger.debug("Variable value: " + str(player_pos))
+logger.critical("Fatal error: Out of memory")
 logger.log("Custom message", "gameplay")
 ```
 
@@ -118,10 +122,13 @@ logger.log("Custom message", "gameplay")
 # セットアップ（AutoLoad経由）
 SyncLogger.setup("192.168.1.100", 9999)
 
-# ログ送信
+# ログ送信（優先度順）
+SyncLogger.trace("Detailed execution trace")
+SyncLogger.debug("Debug information")
 SyncLogger.info("Player connected")
 SyncLogger.warning("Network latency high")
 SyncLogger.error("Database connection failed")
+SyncLogger.critical("Server crashed")
 
 # 安全な終了
 await SyncLogger.shutdown()

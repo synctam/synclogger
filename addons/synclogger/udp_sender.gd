@@ -35,8 +35,10 @@ func send(data: String) -> bool:
 	# UDP接続をリセットして再接続（毎回新しい接続を作成）
 	_udp_socket.close()
 	
+	# IPアドレス検証と接続試行
 	var result = _udp_socket.connect_to_host(_host, _port)
 	if result != OK:
+		# 接続失敗（無効なIPアドレス、ネットワークエラー等）
 		return false
 
 	var bytes = data.to_utf8_buffer()

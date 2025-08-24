@@ -12,6 +12,8 @@ var _is_setup: bool = false
 func _init():
 	_udp_sender = UDPSender.new()
 
+# RefCountedなので自動的にメモリ管理される
+
 func setup(host: String, port: int) -> void:
 	_host = host
 	_port = port
@@ -40,6 +42,12 @@ func warning(message: String, category: String = "general") -> bool:
 func error(message: String, category: String = "general") -> bool:
 	return _send_log(message, "error", category)
 
+func critical(message: String, category: String = "general") -> bool:
+	return _send_log(message, "critical", category)
+
+func trace(message: String, category: String = "general") -> bool:
+	return _send_log(message, "trace", category)
+
 # 共通のログ送信処理
 func _send_log(message: String, level: String, category: String) -> bool:
 	if not _is_setup:
@@ -58,3 +66,10 @@ func _create_log_data(message: String, level: String, category: String) -> Dicti
 		"category": category,
 		"message": message
 	}
+
+func close() -> void:
+	# 接続をクリーンアップ
+	_is_setup = false
+	if _udp_sender:
+		_udp_sender.close()
+		_udp_sender = null

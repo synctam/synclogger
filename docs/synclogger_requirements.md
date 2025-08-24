@@ -44,10 +44,12 @@ const MainThreadSimpleLogger = preload("res://addons/synclogger/mainthread_simpl
 var logger = MainThreadSimpleLogger.new()
 logger.setup("127.0.0.1", 9998)         # 設定
 logger.log("メッセージ", "category")      # カテゴリ付きログ
-logger.debug("デバッグ情報")              # レベル別送信
-logger.info("情報")
-logger.warning("警告")  
-logger.error("エラー")
+logger.trace("詳細追跡情報")              # 最詳細レベル
+logger.debug("デバッグ情報")              # デバッグレベル
+logger.info("情報")                      # 情報レベル
+logger.warning("警告")                   # 警告レベル
+logger.error("エラー")                   # エラーレベル
+logger.critical("致命的エラー")           # 致命的エラーレベル
 ```
 
 #### 2.1.3 Godot統合機能
@@ -193,7 +195,7 @@ synclogger/auto_disable_on_lag: true
 ### 5.2 ログレベル
 ```gdscript
 enum LogLevel {
-    VERBOSE,    # 詳細情報
+    TRACE,      # 最詳細追跡情報
     DEBUG,      # デバッグ情報
     INFO,       # 一般情報
     WARNING,    # 警告
@@ -205,9 +207,10 @@ enum LogLevel {
 ### 5.3 ログモード
 ```gdscript
 enum LoggingMode {
-    PRODUCTION,   # 最小限のログ
-    DEVELOPMENT,  # 中程度のログ
-    DEBUG,        # 詳細ログ
+    PRODUCTION,   # 最小限のログ（critical/errorのみ）
+    DEVELOPMENT,  # 中程度のログ（warning以上）
+    DEBUG,        # 詳細ログ（debug以上）
+    TRACE,        # 全詳細ログ（traceを含む全レベル）
     TEST,         # テスト用最適化
     SILENT        # ログ無効
 }
@@ -410,8 +413,7 @@ res://addons/synclogger/
 demo_scene.gd/tscn (スレッド版デモ)
 demo_mainthread_simple.gd/tscn (安定版デモ)
 log_receiver.py (Python受信スクリプト)
-tests/ (33テスト全成功)
-debug/ (開発デバッグファイル)
+tests/ (21テスト全成功)
 ```
 
 ---
