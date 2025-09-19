@@ -6,11 +6,15 @@ const AUTOLOAD_PATH = "res://addons/synclogger/synclogger.gd"
 
 func _enter_tree():
 	add_autoload_singleton(AUTOLOAD_NAME, AUTOLOAD_PATH)
-	print("SyncLogger アドオンが有効化されました")
-	print("使用方法:")
-	print("  SyncLogger.setup('192.168.1.100', 9999)")
-	print("  SyncLogger.log('メッセージ')")
+	print("SyncLogger addon enabled")
+	print("Usage:")
+	print("  SyncLogger.setup('127.0.0.1', 9999)")
+	print("  SyncLogger.log('message')")
+	print("System log capture options:")
+	print("  SyncLogger.enable_system_log_capture(true/false)")
+	print("  SyncLogger.set_capture_errors(true/false)")
+	print("  SyncLogger.set_capture_messages(true/false)")
 
 func _exit_tree():
 	remove_autoload_singleton(AUTOLOAD_NAME)
-	print("SyncLogger アドオンが無効化されました")
+	print("SyncLogger addon disabled")

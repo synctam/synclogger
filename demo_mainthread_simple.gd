@@ -12,7 +12,7 @@ func _ready():
 	
 	# シンプルロガーをセットアップ
 	simple_logger = MainThreadSimpleLogger.new()
-	simple_logger.setup("127.0.0.1", 9996)  # 異なるポートを使用
+	simple_logger.setup("127.0.0.1", 9999)  # 標準ポート使用
 	print("MainThread Simple Logger setup completed")
 	
 	# 各レベルのログを送信
