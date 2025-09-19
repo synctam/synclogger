@@ -10,10 +10,16 @@ func _enter_tree():
 	print("Usage:")
 	print("  SyncLogger.setup('127.0.0.1', 9999)")
 	print("  SyncLogger.log('message')")
-	print("System log capture options:")
-	print("  SyncLogger.enable_system_log_capture(true/false)")
-	print("  SyncLogger.set_capture_errors(true/false)")
-	print("  SyncLogger.set_capture_messages(true/false)")
+
+	# Godot 4.5+機能の表示
+	if ClassDB.class_exists("Logger"):
+		print("System log capture options (Godot 4.5+):")
+		print("  SyncLogger.enable_system_log_capture(true/false)")
+		print("  SyncLogger.set_capture_errors(true/false)")
+		print("  SyncLogger.set_capture_messages(true/false)")
+	else:
+		print("Note: System log capture requires Godot 4.5+")
+		print("      Current version runs in compatibility mode")
 
 func _exit_tree():
 	remove_autoload_singleton(AUTOLOAD_NAME)
