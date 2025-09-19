@@ -10,7 +10,7 @@ const MainThreadSimpleLogger = preload("res://addons/synclogger/mainthread_simpl
 var _interceptor: SyncLoggerInterceptor
 var _mock_sync_logger: MainThreadSimpleLogger
 var _test_host: String = "127.0.0.1"
-var _test_port: int = 9998
+var _test_port: int = 9999
 
 func before_each():
 	# モックの MainThreadSimpleLogger を作成

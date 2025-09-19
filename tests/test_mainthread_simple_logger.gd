@@ -26,15 +26,15 @@ func test_can_create_mainthread_simple_logger():
 func test_can_setup_simple_logger():
 	# Red: setupメソッドが存在しない
 	simple_logger = MainThreadSimpleLogger.new()
-	simple_logger.setup("127.0.0.1", 9998)
+	simple_logger.setup("127.0.0.1", 9999)
 	
 	assert_eq(simple_logger.get_host(), "127.0.0.1", "ホストが正しく設定されること")
-	assert_eq(simple_logger.get_port(), 9998, "ポートが正しく設定されること")
+	assert_eq(simple_logger.get_port(), 9999, "ポートが正しく設定されること")
 
 func test_can_send_log_immediately():
 	# Green: 基本的なログ送信機能をテスト
 	simple_logger = MainThreadSimpleLogger.new()
-	simple_logger.setup("127.0.0.1", 9998)
+	simple_logger.setup("127.0.0.1", 9999)
 	
 	# 実際の送信結果を確認（モックなしでシンプルに）
 	var result = simple_logger.log("Test message")
@@ -56,7 +56,7 @@ func test_send_without_setup_fails():
 func test_critical_and_trace_levels():
 	# TDD Red: critical と trace メソッドがまだ存在しない
 	simple_logger = MainThreadSimpleLogger.new()
-	simple_logger.setup("127.0.0.1", 9998)
+	simple_logger.setup("127.0.0.1", 9999)
 	
 	# criticalレベルのテスト
 	var critical_result = simple_logger.critical("Critical system error")
@@ -69,7 +69,7 @@ func test_critical_and_trace_levels():
 func test_all_six_log_levels():
 	# 全6レベルが動作することを確認
 	simple_logger = MainThreadSimpleLogger.new()
-	simple_logger.setup("127.0.0.1", 9998)
+	simple_logger.setup("127.0.0.1", 9999)
 	
 	# すべてのレベルをテスト（優先度順）
 	var trace_result = simple_logger.trace("trace message")
