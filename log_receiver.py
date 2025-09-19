@@ -41,9 +41,9 @@ def start_log_receiver(host='localhost', port=9999):
                 category = log_data.get('category', 'general')
                 message = log_data.get('message', '')
                 
-                # タイムスタンプをフォーマット
+                # タイムスタンプをフォーマット（マイクロ秒まで）
                 ts = datetime.fromtimestamp(timestamp)
-                time_str = ts.strftime('%H:%M:%S.%f')[:-3]  # ミリ秒まで
+                time_str = ts.strftime('%H:%M:%S.%f')  # マイクロ秒まで
                 
                 # ログレベルに応じた色付け（ANSI escape codes）
                 level_colors = {
