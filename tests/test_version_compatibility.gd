@@ -12,11 +12,14 @@ var _test_port: int = 9999
 
 func before_each():
 	_sync_logger = SyncLoggerMain.new()
+	# Orphans対策: テスト用に親ノードを設定
+	add_child_autofree(_sync_logger)
 
 func after_each():
 	if _sync_logger:
 		_sync_logger.shutdown()
-		_sync_logger = null
+	# add_child_autofreeが自動的に解放するのでqueue_freeは不要
+	_sync_logger = null
 
 func test_logger_support_detection():
 	# テスト: Loggerサポートの正確な検出
