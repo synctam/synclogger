@@ -35,3 +35,6 @@ user://
 # Additional debug files
 debug_*.log
 /tmp/
+godot_mcp
+.claude
+.serena
