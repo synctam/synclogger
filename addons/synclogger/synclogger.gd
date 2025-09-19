@@ -17,9 +17,23 @@ var _capture_errors: bool = true
 var _logger_registered: bool = false
 var _logger_support_available: bool = false
 
+# 設定ファイル機能
+var _config_file_enabled: bool = false
+const CONFIG_FILENAME = ".synclogger.json"
+const DEFAULT_CONFIG = {
+	"host": "127.0.0.1",
+	"port": 9999,
+	"system_capture": true,
+	"capture_errors": true,
+	"capture_messages": true
+}
+
 func _init():
 	_logger = MainThreadSimpleLogger.new()
 	_check_logger_support()
+
+func _ready():
+	_try_load_config_file()
 
 # Godot 4.5+ Logger機能の可用性チェック
 func _check_logger_support():
@@ -63,37 +77,37 @@ func get_queue_size() -> int:
 
 # ログAPI - MainThreadSimpleLoggerに委譲
 func log(message: String, category: String = "general") -> bool:
-	if not _is_setup:
+	if not _config_file_enabled or not _is_setup:
 		return false
 	return _logger.log(message, category)
 
 func trace(message: String, category: String = "general") -> bool:
-	if not _is_setup:
+	if not _config_file_enabled or not _is_setup:
 		return false
 	return _logger.trace(message, category)
 
 func debug(message: String, category: String = "general") -> bool:
-	if not _is_setup:
+	if not _config_file_enabled or not _is_setup:
 		return false
 	return _logger.debug(message, category)
 
 func info(message: String, category: String = "general") -> bool:
-	if not _is_setup:
+	if not _config_file_enabled or not _is_setup:
 		return false
 	return _logger.info(message, category)
 
 func warning(message: String, category: String = "general") -> bool:
-	if not _is_setup:
+	if not _config_file_enabled or not _is_setup:
 		return false
 	return _logger.warning(message, category)
 
 func error(message: String, category: String = "general") -> bool:
-	if not _is_setup:
+	if not _config_file_enabled or not _is_setup:
 		return false
 	return _logger.error(message, category)
 
 func critical(message: String, category: String = "general") -> bool:
-	if not _is_setup:
+	if not _config_file_enabled or not _is_setup:
 		return false
 	return _logger.critical(message, category)
 
@@ -156,8 +170,16 @@ func get_compatibility_info() -> Dictionary:
 		"godot_version": Engine.get_version_info(),
 		"logger_support": _logger_support_available,
 		"interceptor_active": _interceptor != null,
-		"system_capture_available": _logger_support_available
+		"system_capture_available": _logger_support_available,
+		"config_file_enabled": _config_file_enabled
 	}
+
+# 設定ファイル機能API
+func is_config_file_enabled() -> bool:
+	return _config_file_enabled
+
+func get_config_file_path() -> String:
+	return "user://" + CONFIG_FILENAME
 
 # 内部実装（Godot 4.5+のみ）
 func _setup_system_log_capture() -> void:
@@ -190,3 +212,90 @@ func shutdown() -> void:
 	if _logger:
 		_logger.close()
 		_logger = null
+
+# 設定ファイル機能
+func _try_load_config_file() -> void:
+	var config_path = "user://" + CONFIG_FILENAME
+
+	if not FileAccess.file_exists(config_path):
+		_config_file_enabled = false
+		print("SyncLogger: Disabled (no config file at ", config_path, ")")
+		return
+
+	# ファイルが存在する場合は必ず有効化を試行
+	var config = _load_config_with_fallback(config_path)
+	_setup_from_config(config)
+	_config_file_enabled = true
+	print("SyncLogger: Enabled with config: ", config)
+
+func _load_config_with_fallback(path: String) -> Dictionary:
+	var file = FileAccess.open(path, FileAccess.READ)
+	if not file:
+		print("SyncLogger: Failed to read config file, using defaults")
+		return DEFAULT_CONFIG.duplicate()
+
+	var content = file.get_as_text().strip_edges()
+	file.close()
+
+	# 空ファイルの場合：デフォルト設定を書き込み
+	if content.is_empty():
+		_write_default_config(path)
+		print("SyncLogger: Empty config file, created default config")
+		return DEFAULT_CONFIG.duplicate()
+
+	# JSON解析を試行
+	var json = JSON.new()
+	var parse_result = json.parse(content)
+
+	if parse_result != OK:
+		print("SyncLogger: Invalid JSON detected, overwriting with defaults")
+		_write_default_config(path)
+		return DEFAULT_CONFIG.duplicate()
+
+	var parsed_config = json.data
+	if not parsed_config is Dictionary:
+		print("SyncLogger: Config is not object, overwriting with defaults")
+		_write_default_config(path)
+		return DEFAULT_CONFIG.duplicate()
+
+	# デフォルト値とマージ
+	var final_config = DEFAULT_CONFIG.duplicate()
+	for key in parsed_config:
+		if final_config.has(key):
+			final_config[key] = parsed_config[key]
+
+	print("SyncLogger: Config loaded and merged with defaults")
+	return final_config
+
+func _write_default_config(path: String) -> void:
+	var file = FileAccess.open(path, FileAccess.WRITE)
+	if not file:
+		print("SyncLogger: Cannot write config file (permission error)")
+		return
+
+	# コメント付きJSONで書き込み
+	var default_content = """{
+	"_comment": "SyncLogger Configuration - Edit as needed",
+	"host": "127.0.0.1",
+	"port": 9999,
+	"system_capture": true,
+	"capture_errors": true,
+	"capture_messages": true
+}"""
+
+	file.store_string(default_content)
+	file.close()
+	print("SyncLogger: Default config file created at ", path)
+
+func _setup_from_config(config: Dictionary) -> void:
+	# 基本設定
+	setup(config.get("host", "127.0.0.1"), config.get("port", 9999))
+
+	# システムキャプチャ設定（Godot 4.5+のみ）
+	if _logger_support_available:
+		if config.has("system_capture"):
+			enable_system_log_capture(config.system_capture)
+		if config.has("capture_errors"):
+			set_capture_errors(config.capture_errors)
+		if config.has("capture_messages"):
+			set_capture_messages(config.capture_messages)
