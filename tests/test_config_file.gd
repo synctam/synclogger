@@ -1,14 +1,13 @@
 extends GutTest
-class_name TestConfigFile
 
 # 設定ファイル機能のテスト
 
-var _sync_logger: SyncLoggerMain
+var _sync_logger: SyncLoggerNode
 var _config_path: String
 
 
 func before_each():
-	_sync_logger = SyncLoggerMain.new()
+	_sync_logger = SyncLoggerNode.new()
 	add_child_autofree(_sync_logger)
 	_config_path = _sync_logger.get_config_file_path()
 	# テスト前に設定ファイルを削除

@@ -1,10 +1,10 @@
 extends GutTest
 
-var synclogger: SyncLoggerMain
+var synclogger: SyncLoggerNode
 
 
 func before_each():
-	synclogger = SyncLoggerMain.new()
+	synclogger = SyncLoggerNode.new()
 	# テスト用に親ノードを設定（Orphan回避）
 	add_child_autofree(synclogger)
 	# テストモードを有効化（UDP接続エラー回避）

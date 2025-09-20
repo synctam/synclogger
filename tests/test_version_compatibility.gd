@@ -1,16 +1,15 @@
 extends GutTest
-class_name TestVersionCompatibility
 
 # バージョン互換性テスト
 # Godot 4.0-4.4 と 4.5+ での動作確認
 
-var _sync_logger: SyncLoggerMain
+var _sync_logger: SyncLoggerNode
 var _test_host: String = "127.0.0.1"
 var _test_port: int = 9999
 
 
 func before_each():
-	_sync_logger = SyncLoggerMain.new()
+	_sync_logger = SyncLoggerNode.new()
 	# Orphans対策: テスト用に親ノードを設定
 	add_child_autofree(_sync_logger)
 

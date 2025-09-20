@@ -1,15 +1,14 @@
 extends GutTest
-class_name TestSyncLoggerIntegration
 
 # SyncLogger + Logger Interceptor統合テスト
 
-var _sync_logger: SyncLoggerMain
+var _sync_logger: SyncLoggerNode
 var _test_host: String = "127.0.0.1"
 var _test_port: int = 9999
 
 
 func before_each():
-	_sync_logger = SyncLoggerMain.new()
+	_sync_logger = SyncLoggerNode.new()
 	# Orphans対策: テスト用に親ノードを設定
 	add_child_autofree(_sync_logger)
 

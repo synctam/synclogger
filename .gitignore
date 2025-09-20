@@ -6,6 +6,7 @@
 export_presets.cfg
 override.cfg
 project.godot.tmp
+*.uid
 
 # OS generated files
 .DS_Store
