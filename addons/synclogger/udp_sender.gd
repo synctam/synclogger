@@ -47,30 +47,23 @@ func send(data: String) -> bool:
 	if not _is_setup:
 		return false
 
-	if _host.is_empty() or _port <= 0:
-		return false
-
 	# テストモード時は接続チェックを省略して成功とみなす
 	if _test_mode:
 		return true
 
-	# 永続接続が利用可能な場合はそれを使用
-	if _is_connected:
-		var bytes = data.to_utf8_buffer()
-		var sent = _udp_socket.put_packet(bytes)
-		return sent == OK
-
-	# 永続接続が失敗した場合は従来の一時接続方式にフォールバック
-	_udp_socket.close()
-	var result = _udp_socket.connect_to_host(_host, _port)
-	if result != OK:
+	# Phase 2最適化: _ensure_connection()を使用
+	if not _ensure_connection():
 		return false
 
 	var bytes = data.to_utf8_buffer()
-	var sent = _udp_socket.put_packet(bytes)
-	_udp_socket.close()
+	var result = _udp_socket.put_packet(bytes)
 
-	return sent == OK
+	# 送信失敗時は接続を再確立
+	if result != OK:
+		_is_connected = false
+		return _retry_send(data)
+
+	return true
 
 
 func close() -> void:
@@ -90,3 +83,27 @@ func is_setup() -> bool:
 func is_udp_connected() -> bool:
 	"""UDP接続状態を確認（基底クラスのis_connected()との競合回避）"""
 	return _is_connected and _udp_socket != null
+
+
+# ======== Phase 2: UDP接続最適化メソッド ========
+
+func _ensure_connection() -> bool:
+	"""接続確立の自動化"""
+	if _is_connected:
+		return true
+
+	if _host.is_empty() or _port <= 0:
+		return false
+
+	var result = _udp_socket.connect_to_host(_host, _port)
+	_is_connected = (result == OK)
+	return _is_connected
+
+
+func _retry_send(data: String) -> bool:
+	"""送信失敗時の再試行ロジック"""
+	if not _ensure_connection():
+		return false
+
+	var bytes = data.to_utf8_buffer()
+	return _udp_socket.put_packet(bytes) == OK
