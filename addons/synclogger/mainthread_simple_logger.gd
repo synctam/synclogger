@@ -13,6 +13,11 @@ var _is_setup: bool = false
 var _sanitize_ansi: bool = true    # デフォルト: ANSI文字を除去
 var _sanitize_control_chars: bool = true  # デフォルト: 制御文字を除去
 
+# Godot Logger統合（Phase 2統合機能）
+var _godot_logger_enabled: bool = false
+var _capture_messages: bool = true
+var _capture_errors: bool = true
+
 func _init():
 	_udp_sender = UDPSender.new()
 
@@ -183,3 +188,79 @@ func close() -> void:
 	if _udp_sender:
 		_udp_sender.close()
 		_udp_sender = null
+
+# ======== Godot Logger統合機能（Phase 2統合） ========
+
+func enable_godot_logger_integration() -> void:
+	"""Godot 4.5+ Logger統合を有効化"""
+	if ClassDB.class_exists("Logger"):
+		_godot_logger_enabled = true
+		# システムログ統合処理は上位レベル（synclogger.gd）で実装
+
+func is_godot_logger_enabled() -> bool:
+	return _godot_logger_enabled
+
+func set_capture_messages(enabled: bool) -> void:
+	_capture_messages = enabled
+
+func set_capture_errors(enabled: bool) -> void:
+	_capture_errors = enabled
+
+func is_capture_messages_enabled() -> bool:
+	return _capture_messages
+
+func is_capture_errors_enabled() -> bool:
+	return _capture_errors
+
+# Logger仮想メソッドサポート（logger_interceptor.gd統合）
+func handle_system_log_message(message: String, error: bool) -> void:
+	"""システムログメッセージ処理（元logger_interceptorから統合）"""
+	if not _godot_logger_enabled or not _capture_messages:
+		return
+
+	if error:
+		error(message, "godot_system")
+	else:
+		info(message, "godot_system")
+
+func handle_system_log_error(function: String, file: String, line: int,
+							 rationale: String, error_type: int) -> void:
+	"""システムエラー処理（元logger_interceptorから統合）"""
+	if not _godot_logger_enabled or not _capture_errors:
+		return
+
+	var error_msg = "ERROR in %s:%d (%s): %s" % [file, line, function, rationale]
+	var error_level = _convert_error_type(error_type)
+
+	match error_level:
+		"error":
+			error(error_msg, "godot_error")
+		"warning":
+			warning(error_msg, "godot_error")
+		"critical":
+			critical(error_msg, "godot_error")
+		_:
+			error(error_msg, "godot_error")
+
+func _convert_error_type(error_type: int) -> String:
+	"""エラータイプをログレベルに変換（元logger_interceptorから統合）"""
+	match error_type:
+		1: # Logger.ERROR_TYPE_ERROR
+			return "error"
+		2: # Logger.ERROR_TYPE_WARNING
+			return "warning"
+		3: # Logger.ERROR_TYPE_SCRIPT
+			return "error"
+		4: # Logger.ERROR_TYPE_SHADER
+			return "error"
+		_:
+			return "error"
+
+func get_logger_stats() -> Dictionary:
+	"""Logger統合統計情報"""
+	return {
+		"godot_logger_enabled": _godot_logger_enabled,
+		"capture_messages": _capture_messages,
+		"capture_errors": _capture_errors,
+		"logger_support_available": ClassDB.class_exists("Logger")
+	}

@@ -63,7 +63,7 @@ func test_system_log_stats():
 
 	var stats = _sync_logger.get_system_log_stats()
 	assert_not_null(stats, "統計情報が取得できること")
-	assert_true(stats.has("enabled"), "統計情報にenabledが含まれること")
+	assert_true(stats.has("godot_logger_enabled"), "統計情報にgodot_logger_enabledが含まれること")
 	assert_true(stats.has("capture_messages"), "統計情報にcapture_messagesが含まれること")
 	assert_true(stats.has("capture_errors"), "統計情報にcapture_errorsが含まれること")
 

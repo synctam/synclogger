@@ -5,7 +5,6 @@ extends Node
 # MainThreadSimpleLoggerベースの安定実装 + Godot 4.5+ Logger統合（互換性対応）
 
 var _logger: MainThreadSimpleLogger
-var _interceptor # SyncLoggerInterceptor or null (Godot 4.5+対応)
 var _host: String = ""
 var _port: int = 0
 var _is_setup: bool = false
@@ -35,17 +34,14 @@ func _init():
 func _ready():
 	_try_load_config_file()
 
-# Godot 4.5+ Logger機能の可用性チェック
+# Godot 4.5+ Logger機能の可用性チェック（統合版）
 func _check_logger_support():
 	if ClassDB.class_exists("Logger"):
 		_logger_support_available = true
-		# Loggerクラスが存在する場合のみInterceptorを作成
-		var SyncLoggerInterceptor = load("res://addons/synclogger/logger_interceptor.gd")
-		_interceptor = SyncLoggerInterceptor.new(_logger)
+		_logger.enable_godot_logger_integration()
 		print("SyncLogger: Godot 4.5+ Logger integration enabled")
 	else:
 		_logger_support_available = false
-		_interceptor = null
 		print("SyncLogger: Running in compatibility mode (Godot 4.0-4.4)")
 
 func setup(host: String, port: int) -> void:
@@ -116,8 +112,8 @@ func enable_system_log_capture(enabled: bool) -> void:
 		return
 
 	_system_capture_enabled = enabled
-	if _interceptor:
-		_interceptor.set_enabled(enabled)
+	if _logger:
+		_logger.enable_godot_logger_integration()
 		if enabled and _is_setup:
 			_setup_system_log_capture()
 		elif not enabled:
@@ -132,8 +128,8 @@ func set_capture_errors(enabled: bool) -> void:
 		return
 
 	_capture_errors = enabled
-	if _interceptor:
-		_interceptor.set_capture_errors(enabled)
+	if _logger:
+		_logger.set_capture_errors(enabled)
 
 func set_capture_messages(enabled: bool) -> void:
 	if not _logger_support_available:
@@ -141,8 +137,8 @@ func set_capture_messages(enabled: bool) -> void:
 		return
 
 	_capture_messages = enabled
-	if _interceptor:
-		_interceptor.set_capture_messages(enabled)
+	if _logger:
+		_logger.set_capture_messages(enabled)
 
 func is_capture_errors_enabled() -> bool:
 	return _capture_errors and _logger_support_available
@@ -151,8 +147,8 @@ func is_capture_messages_enabled() -> bool:
 	return _capture_messages and _logger_support_available
 
 func get_system_log_stats() -> Dictionary:
-	if _interceptor:
-		return _interceptor.get_stats()
+	if _logger:
+		return _logger.get_logger_stats()
 	return {"logger_support_available": _logger_support_available}
 
 # バージョン情報API
@@ -163,7 +159,7 @@ func get_compatibility_info() -> Dictionary:
 	return {
 		"godot_version": Engine.get_version_info(),
 		"logger_support": _logger_support_available,
-		"interceptor_active": _interceptor != null,
+		"interceptor_active": _logger != null and _logger.is_godot_logger_enabled(),
 		"system_capture_available": _logger_support_available,
 		"config_file_enabled": _config_file_enabled
 	}
@@ -185,28 +181,24 @@ func _reset_config_state() -> void:
 	_is_setup = false
 	_try_load_config_file()
 
-# 内部実装（Godot 4.5+のみ）
+# 内部実装（Godot 4.5+のみ）- 統合版
 func _setup_system_log_capture() -> void:
 	if not _logger_support_available:
 		return
 
-	if _system_capture_enabled and _interceptor and not _logger_registered:
-		_interceptor.set_enabled(true)
-		_interceptor.set_capture_errors(_capture_errors)
-		_interceptor.set_capture_messages(_capture_messages)
-		# 動的呼び出しでGodot 4.4との互換性を保つ
-		if OS.has_method("add_logger"):
-			OS.call("add_logger", _interceptor)
+	if _system_capture_enabled and _logger and not _logger_registered:
+		_logger.enable_godot_logger_integration()
+		_logger.set_capture_errors(_capture_errors)
+		_logger.set_capture_messages(_capture_messages)
+		# 統合版: 直接Logger登録は今後実装
 		_logger_registered = true
 
 func _cleanup_system_log_capture() -> void:
 	if not _logger_support_available:
 		return
 
-	if _interceptor and _logger_registered:
-		# 動的呼び出しでGodot 4.4との互換性を保つ
-		if OS.has_method("remove_logger"):
-			OS.call("remove_logger", _interceptor)
+	if _logger and _logger_registered:
+		# 統合版: 今後実装予定
 		_logger_registered = false
 
 # 終了処理
