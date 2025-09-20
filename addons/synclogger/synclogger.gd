@@ -79,41 +79,31 @@ func get_queue_size() -> int:
 	# キューレス実装のため常に0を返す
 	return 0
 
+# 条件チェック統一化（設定ファイル任意化）
+func _can_log() -> bool:
+	return _is_setup
+
 # ログAPI - MainThreadSimpleLoggerに委譲
 func log(message: String, category: String = "general") -> bool:
-	if not _config_file_enabled or not _is_setup:
-		return false
-	return _logger.log(message, category)
+	return _can_log() and _logger.log(message, category)
 
 func trace(message: String, category: String = "general") -> bool:
-	if not _config_file_enabled or not _is_setup:
-		return false
-	return _logger.trace(message, category)
+	return _can_log() and _logger.trace(message, category)
 
 func debug(message: String, category: String = "general") -> bool:
-	if not _config_file_enabled or not _is_setup:
-		return false
-	return _logger.debug(message, category)
+	return _can_log() and _logger.debug(message, category)
 
 func info(message: String, category: String = "general") -> bool:
-	if not _config_file_enabled or not _is_setup:
-		return false
-	return _logger.info(message, category)
+	return _can_log() and _logger.info(message, category)
 
 func warning(message: String, category: String = "general") -> bool:
-	if not _config_file_enabled or not _is_setup:
-		return false
-	return _logger.warning(message, category)
+	return _can_log() and _logger.warning(message, category)
 
 func error(message: String, category: String = "general") -> bool:
-	if not _config_file_enabled or not _is_setup:
-		return false
-	return _logger.error(message, category)
+	return _can_log() and _logger.error(message, category)
 
 func critical(message: String, category: String = "general") -> bool:
-	if not _config_file_enabled or not _is_setup:
-		return false
-	return _logger.critical(message, category)
+	return _can_log() and _logger.critical(message, category)
 
 # 内部ヘルパー（互換性のため）
 func _create_log_data(message: String, level: String, category: String) -> Dictionary:
@@ -185,26 +175,8 @@ func is_config_file_enabled() -> bool:
 func get_config_file_path() -> String:
 	return "user://" + CONFIG_FILENAME
 
-# サニタイズ設定API（上位レベル制御）
-func set_sanitize_ansi(enabled: bool) -> void:
-	"""ANSIエスケープシーケンス除去の設定"""
-	if _logger:
-		_logger.set_sanitize_ansi(enabled)
-
-func set_sanitize_control_chars(enabled: bool) -> void:
-	"""制御文字除去の設定"""
-	if _logger:
-		_logger.set_sanitize_control_chars(enabled)
-
-func is_sanitize_ansi_enabled() -> bool:
-	if _logger:
-		return _logger.is_sanitize_ansi_enabled()
-	return true
-
-func is_sanitize_control_chars_enabled() -> bool:
-	if _logger:
-		return _logger.is_sanitize_control_chars_enabled()
-	return true
+# サニタイズ機能は MainThreadSimpleLogger で直接制御
+# 重複除去: 上位レベル制御API削除（setupメソッドで自動設定）
 
 # テスト用の状態リセット機能
 func _reset_config_state() -> void:
@@ -245,58 +217,45 @@ func shutdown() -> void:
 		_logger.close()
 		_logger = null
 
-# 設定ファイル機能
+# 簡素化された設定ファイル機能（任意）
 func _try_load_config_file() -> void:
 	var config_path = "user://" + CONFIG_FILENAME
-
-	if not FileAccess.file_exists(config_path):
+	if FileAccess.file_exists(config_path):
+		var config = _load_simple_config(config_path)
+		_setup_from_config(config)
+		_config_file_enabled = true
+		print("SyncLogger: Config loaded and merged with defaults")
+	else:
 		_config_file_enabled = false
 		print("SyncLogger: Disabled (no config file at ", config_path, ")")
-		return
 
-	# ファイルが存在する場合は必ず有効化を試行
-	var config = _load_config_with_fallback(config_path)
-	_setup_from_config(config)
-	_config_file_enabled = true
-	print("SyncLogger: Enabled with config: ", config)
-
-func _load_config_with_fallback(path: String) -> Dictionary:
+func _load_simple_config(path: String) -> Dictionary:
 	var file = FileAccess.open(path, FileAccess.READ)
 	if not file:
-		print("SyncLogger: Failed to read config file, using defaults")
 		return DEFAULT_CONFIG.duplicate()
 
 	var content = file.get_as_text().strip_edges()
 	file.close()
 
-	# 空ファイルの場合：デフォルト設定を書き込み
 	if content.is_empty():
 		_write_default_config(path)
 		print("SyncLogger: Empty config file, created default config")
 		return DEFAULT_CONFIG.duplicate()
 
-	# JSON解析を試行
 	var json = JSON.new()
 	var parse_result = json.parse(content)
 
-	if parse_result != OK:
+	if parse_result != OK or not json.data is Dictionary:
 		print("SyncLogger: Invalid JSON detected, overwriting with defaults")
-		_write_default_config(path)
-		return DEFAULT_CONFIG.duplicate()
-
-	var parsed_config = json.data
-	if not parsed_config is Dictionary:
-		print("SyncLogger: Config is not object, overwriting with defaults")
 		_write_default_config(path)
 		return DEFAULT_CONFIG.duplicate()
 
 	# デフォルト値とマージ
 	var final_config = DEFAULT_CONFIG.duplicate()
-	for key in parsed_config:
+	for key in json.data:
 		if final_config.has(key):
-			final_config[key] = parsed_config[key]
+			final_config[key] = json.data[key]
 
-	print("SyncLogger: Config loaded and merged with defaults")
 	return final_config
 
 func _write_default_config(path: String) -> void:
