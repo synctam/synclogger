@@ -10,20 +10,18 @@ This is a **Godot SyncLogger addon** project currently in **planning phase**. Th
 
 ## Development Status
 
-**Current State**: Phase 1 MVP完成 + MainThreadSimpleLogger追加実装済み
-**Phase 1完成**: スレッドベースのリアルタイムUDPログシステム実装完了
-**追加機能**: MainThreadSimpleLogger（メインスレッド版、安定動作）
-**Next Phase**: Phase 2（機能拡張・最適化・プロダクション向け機能）
+**Current State**: リファクタリング完了（Phase 1-3 完了）
+**Phase 1完了**: MainThreadSimpleLoggerをSyncLoggerMainに統合、重複コード完全削除
+**Phase 2完了**: UDP接続管理最適化、再試行ロジック実装
+**Phase 3完了**: テスト構造統一、不要ファイル削除
 
 ## Architecture Overview
 
-シンプルなメインスレッド実装でUDPログ送信を実現：
+統合されたシンプルなアーキテクチャ：
 
 ```
 SyncLogger (AutoLoad Singleton API)
-    ↓ (delegate to)
-MainThreadSimpleLogger (Main Thread)
-    ↓ (sends via)
+    ↓ (direct implementation)
 UDPSender → Network (UDP)
 ```
 
@@ -69,12 +67,10 @@ All features must follow Red-Green-Refactor cycle using **GUT (Godot Unit Test)*
 ### 実装済みDirectory Structure:
 ```
 res://addons/synclogger/
-├── plugin.cfg                     # Plugin configuration
-├── plugin.gd                      # Plugin main class  
-├── synclogger.gd                   # AutoLoad singleton (MainThreadLoggerベース)
-├── mainthread_simple_logger.gd     # メインスレッド版ロガー（コア実装）
-├── udp_sender.gd                   # UDP transmission (修正済み)
-└── settings/                       # Settings management (構造のみ)
+├── plugin.cfg        # Plugin configuration
+├── plugin.gd         # Plugin main class
+├── synclogger.gd      # AutoLoad singleton (統合実装)
+└── udp_sender.gd      # UDP transmission (最適化済み)
 ```
 
 ## 実装済みKey APIs
@@ -91,32 +87,22 @@ SyncLogger.debug("debug message")
 await SyncLogger.shutdown()  # 安全な終了処理
 ```
 
-### MainThreadSimpleLogger（安定版・推奨）
-```gdscript
-# メインスレッド版（安定動作）
-const MainThreadSimpleLogger = preload("res://addons/synclogger/mainthread_simple_logger.gd")
-var logger = MainThreadSimpleLogger.new()
-logger.setup("127.0.0.1", 9998)
-logger.log("message", "category")
-logger.info("information")
-logger.error("error message")
-```
 
 ## 現在の実装状況
 
 ### ✅ 完成済み機能
-- **UDPSender**: UDP通信機能（接続問題修正済み）
-- **MainThreadSimpleLogger**: メインスレッド版ロガー（**コア実装**）
-- **SyncLoggerMain**: AutoLoadシングルトン（MainThreadLoggerベース）
+- **SyncLoggerMain**: 統合された単一エントリーポイント
+- **UDPSender**: 最適化されたUDP通信（接続管理改善済み）
 - **ログレベル**: 6レベル対応（trace, debug, info, warning, error, critical）
-- **テストスイート**: 全テスト成功
-- **デモシーン**: メインスレッド版
+- **サニタイズ機能**: ANSIエスケープシーケンス、制御文字除去
+- **テストスイート**: 全47テスト成功
 - **log_receiver.py**: Python受信スクリプト
 
 ### 🎯 特徴
-- **シンプル**: キューレス、メインスレッドのみ
-- **安定**: セグメンテーションフォルト問題を解決
-- **即座送信**: ログを即座にUDP送信
+- **シンプル**: 単一実装、重複コードゼロ
+- **最適化**: UDP接続の自動管理、再試行ロジック
+- **安定**: メインスレッドのみ、セグフォルト回避
+- **即座送信**: キューレス、ログを即座にUDP送信
 
 ## Important Files
 
