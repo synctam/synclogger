@@ -1,8 +1,8 @@
 class_name SyncLoggerMain
 extends Node
 
-# SyncLogger - Godot用UDPログ送信システム
-# MainThreadSimpleLoggerベースの安定実装 + Godot 4.5+ Logger統合（互換性対応）
+# SyncLogger - Godot用UDPログ送信システム（Phase 3統一設計）
+# 推奨パターン: SyncLogger.setup("127.0.0.1", 9999) → SyncLogger.log("message")
 
 var _logger: MainThreadSimpleLogger
 var _host: String = ""
@@ -67,12 +67,12 @@ func get_port() -> int:
 func is_setup() -> bool:
 	return _is_setup
 
-# 互換性のためのメソッド
+# 互換性API（統合・簡素化）
 func is_running() -> bool:
 	return _is_setup
 
 func get_queue_size() -> int:
-	# キューレス実装のため常に0を返す
+	# キューレス実装のため常に0
 	return 0
 
 # 条件チェック統一化（設定ファイル任意化）
@@ -101,23 +101,23 @@ func error(message: String, category: String = "general") -> bool:
 func critical(message: String, category: String = "general") -> bool:
 	return _can_log() and _logger.critical(message, category)
 
-# 内部ヘルパー（互換性のため）
+# 内部ヘルパー統合
 func _create_log_data(message: String, level: String, category: String) -> Dictionary:
 	return _logger._create_log_data(message, level, category)
 
-# システムログキャプチャの制御API（Godot 4.5+のみ）
-func enable_system_log_capture(enabled: bool) -> void:
+# 任意機能: システムログキャプチャ（Godot 4.5+のみ）
+func enable_system_capture() -> bool:
+	"""Enable system log capture (Godot 4.5+ only)"""
 	if not _logger_support_available:
 		print("SyncLogger: System log capture requires Godot 4.5+")
-		return
+		return false
 
-	_system_capture_enabled = enabled
+	_system_capture_enabled = true
 	if _logger:
 		_logger.enable_godot_logger_integration()
-		if enabled and _is_setup:
+		if _is_setup:
 			_setup_system_log_capture()
-		elif not enabled:
-			_cleanup_system_log_capture()
+	return true
 
 func is_system_capture_enabled() -> bool:
 	return _system_capture_enabled and _logger_support_available
@@ -164,7 +164,12 @@ func get_compatibility_info() -> Dictionary:
 		"config_file_enabled": _config_file_enabled
 	}
 
-# 設定ファイル機能API
+# 任意機能: 設定ファイル機能
+func load_config_file() -> bool:
+	"""Manual config file loading (optional)"""
+	_try_load_config_file()
+	return _config_file_enabled
+
 func is_config_file_enabled() -> bool:
 	return _config_file_enabled
 
@@ -209,7 +214,7 @@ func shutdown() -> void:
 		_logger.close()
 		_logger = null
 
-# 簡素化された設定ファイル機能（任意）
+# 任意機能: 設定ファイル自動読み込み
 func _try_load_config_file() -> void:
 	var config_path = "user://" + CONFIG_FILENAME
 	if FileAccess.file_exists(config_path):
@@ -277,7 +282,9 @@ func _setup_from_config(config: Dictionary) -> void:
 	# システムキャプチャ設定（Godot 4.5+のみ）
 	if _logger_support_available:
 		if config.has("system_capture"):
-			enable_system_log_capture(config.system_capture)
+			_system_capture_enabled = config.system_capture
+			if config.system_capture:
+				enable_system_capture()
 		if config.has("capture_errors"):
 			set_capture_errors(config.capture_errors)
 		if config.has("capture_messages"):

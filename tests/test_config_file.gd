@@ -176,11 +176,12 @@ func test_system_capture_config_loading():
 	_sync_logger._ready()
 
 	assert_true(_sync_logger.is_config_file_enabled(), "キャプチャ設定で有効化されること")
-	# Godot 4.5+でのみシステムキャプチャ設定をテスト
+	# Godot 4.5+でのみシステムキャプチャ設定をテスト（設定ファイル反映確認）
 	if _sync_logger.is_logger_integration_available():
-		assert_false(_sync_logger.is_system_capture_enabled(), "システムキャプチャが無効設定されること")
-		assert_false(_sync_logger.is_capture_errors_enabled(), "エラーキャプチャが無効設定されること")
-		assert_false(_sync_logger.is_capture_messages_enabled(), "メッセージキャプチャが無効設定されること")
+		# system_capture: falseの設定ファイルのため、システムキャプチャは無効になる
+		assert_false(_sync_logger.is_system_capture_enabled(), "設定ファイルsystem_capture:falseが反映されること")
+		assert_false(_sync_logger.is_capture_errors_enabled(), "設定ファイルcapture_errors:falseが反映されること")
+		assert_false(_sync_logger.is_capture_messages_enabled(), "設定ファイルcapture_messages:falseが反映されること")
 
 func test_config_file_path_api():
 	# テスト: 設定ファイルパスAPIの動作

@@ -67,11 +67,12 @@ func test_system_capture_behavior_based_on_version():
 		           "Godot 4.5+ではシステムキャプチャがデフォルト有効")
 
 		# システムキャプチャ制御が動作
-		_sync_logger.enable_system_log_capture(false)
-		assert_false(_sync_logger.is_system_capture_enabled(),
-		            "システムキャプチャを無効化できること")
+		# システムキャプチャは setup() 時に自動設定されるため、テスト簡素化
+		# 新API設計では setup() 時の自動設定のため、手動無効化テストは省略
+		# assert_false(_sync_logger.is_system_capture_enabled(),
+		#             "システムキャプチャを無効化できること")
 
-		_sync_logger.enable_system_log_capture(true)
+		_sync_logger.enable_system_capture()
 		assert_true(_sync_logger.is_system_capture_enabled(),
 		           "システムキャプチャを再有効化できること")
 	else:
@@ -80,7 +81,7 @@ func test_system_capture_behavior_based_on_version():
 		            "Godot 4.0-4.4ではシステムキャプチャが無効")
 
 		# システムキャプチャAPIは安全に呼び出せるが効果なし
-		_sync_logger.enable_system_log_capture(true)
+		_sync_logger.enable_system_capture()
 		assert_false(_sync_logger.is_system_capture_enabled(),
 		            "古いバージョンではシステムキャプチャは有効にならない")
 
@@ -115,7 +116,7 @@ func test_graceful_degradation():
 	_sync_logger.setup(_test_host, _test_port)
 
 	# 新機能APIの呼び出し（例外が発生しないこと）
-	_sync_logger.enable_system_log_capture(true)
+	_sync_logger.enable_system_capture()
 	_sync_logger.set_capture_errors(true)
 	_sync_logger.set_capture_messages(true)
 
