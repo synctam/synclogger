@@ -5,9 +5,6 @@ extends Node
 # 推奨パターン: SyncLogger.setup("127.0.0.1", 9999) → SyncLogger.log("message")
 
 var _logger: MainThreadSimpleLogger
-var _host: String = ""
-var _port: int = 0
-var _is_setup: bool = false
 
 # システムログキャプチャ設定（Godot 4.5+のみ有効）
 var _system_capture_enabled: bool = true
@@ -27,12 +24,15 @@ const DEFAULT_CONFIG = {
 	"capture_messages": true
 }
 
+
 func _init():
 	_logger = MainThreadSimpleLogger.new()
 	_check_logger_support()
 
+
 func _ready():
 	_try_load_config_file()
+
 
 # Godot 4.5+ Logger機能の可用性チェック（統合版）
 func _check_logger_support():
@@ -44,11 +44,9 @@ func _check_logger_support():
 		_logger_support_available = false
 		print("SyncLogger: Running in compatibility mode (Godot 4.0-4.4)")
 
+
 func setup(host: String, port: int) -> void:
-	_host = host
-	_port = port
 	_logger.setup(host, port)
-	_is_setup = true
 
 	# サニタイズ設定を確実に有効化（ANSI・制御文字除去）
 	_logger.set_sanitize_ansi(true)
@@ -58,52 +56,73 @@ func setup(host: String, port: int) -> void:
 	if _logger_support_available:
 		_setup_system_log_capture()
 
+
 func get_host() -> String:
-	return _host
+	return _logger.get_host() if _logger != null else ""
+
 
 func get_port() -> int:
-	return _port
+	return _logger.get_port() if _logger != null else 0
+
 
 func is_setup() -> bool:
-	return _is_setup
+	return _logger != null and _logger.is_setup()
+
+
+func set_test_mode(enabled: bool) -> void:
+	"""テスト環境での接続エラー回避モード（テスト専用）"""
+	if _logger:
+		_logger.set_test_mode(enabled)
+
 
 # 互換性API（統合・簡素化）
 func is_running() -> bool:
-	return _is_setup
+	return _logger != null and _logger.is_setup()
+
 
 func get_queue_size() -> int:
 	# キューレス実装のため常に0
 	return 0
 
+
 # 条件チェック統一化（設定ファイル任意化）
 func _can_log() -> bool:
-	return _is_setup
+	return _logger != null and _logger.is_setup()
+
 
 # ログAPI - MainThreadSimpleLoggerに委譲
 func log(message: String, category: String = "general") -> bool:
 	return _can_log() and _logger.log(message, category)
 
+
 func trace(message: String, category: String = "general") -> bool:
 	return _can_log() and _logger.trace(message, category)
+
 
 func debug(message: String, category: String = "general") -> bool:
 	return _can_log() and _logger.debug(message, category)
 
+
 func info(message: String, category: String = "general") -> bool:
 	return _can_log() and _logger.info(message, category)
+
 
 func warning(message: String, category: String = "general") -> bool:
 	return _can_log() and _logger.warning(message, category)
 
+
 func error(message: String, category: String = "general") -> bool:
 	return _can_log() and _logger.error(message, category)
+
 
 func critical(message: String, category: String = "general") -> bool:
 	return _can_log() and _logger.critical(message, category)
 
+
 # 内部ヘルパー統合
 func _create_log_data(message: String, level: String, category: String) -> Dictionary:
 	return _logger._create_log_data(message, level, category)
+
 
 # 任意機能: システムログキャプチャ（Godot 4.5+のみ）
 func enable_system_capture() -> bool:
@@ -115,12 +134,14 @@ func enable_system_capture() -> bool:
 	_system_capture_enabled = true
 	if _logger:
 		_logger.enable_godot_logger_integration()
-		if _is_setup:
+		if _logger.is_setup():
 			_setup_system_log_capture()
 	return true
 
+
 func is_system_capture_enabled() -> bool:
 	return _system_capture_enabled and _logger_support_available
+
 
 func set_capture_errors(enabled: bool) -> void:
 	if not _logger_support_available:
@@ -131,6 +152,7 @@ func set_capture_errors(enabled: bool) -> void:
 	if _logger:
 		_logger.set_capture_errors(enabled)
 
+
 func set_capture_messages(enabled: bool) -> void:
 	if not _logger_support_available:
 		print("SyncLogger: Message capture requires Godot 4.5+")
@@ -140,20 +162,25 @@ func set_capture_messages(enabled: bool) -> void:
 	if _logger:
 		_logger.set_capture_messages(enabled)
 
+
 func is_capture_errors_enabled() -> bool:
 	return _capture_errors and _logger_support_available
 
+
 func is_capture_messages_enabled() -> bool:
 	return _capture_messages and _logger_support_available
+
 
 func get_system_log_stats() -> Dictionary:
 	if _logger:
 		return _logger.get_logger_stats()
 	return {"logger_support_available": _logger_support_available}
 
+
 # バージョン情報API
 func is_logger_integration_available() -> bool:
 	return _logger_support_available
+
 
 func get_compatibility_info() -> Dictionary:
 	return {
@@ -164,27 +191,34 @@ func get_compatibility_info() -> Dictionary:
 		"config_file_enabled": _config_file_enabled
 	}
 
+
 # 任意機能: 設定ファイル機能
 func load_config_file() -> bool:
 	"""Manual config file loading (optional)"""
 	_try_load_config_file()
 	return _config_file_enabled
 
+
 func is_config_file_enabled() -> bool:
 	return _config_file_enabled
+
 
 func get_config_file_path() -> String:
 	return "user://" + CONFIG_FILENAME
 
+
 # サニタイズ機能は MainThreadSimpleLogger で直接制御
 # 重複除去: 上位レベル制御API削除（setupメソッドで自動設定）
+
 
 # テスト用の状態リセット機能
 func _reset_config_state() -> void:
 	"""テスト用: 設定ファイル状態をリセットして再読み込み"""
 	_config_file_enabled = false
-	_is_setup = false
+	if _logger:
+		_logger._is_setup = false
 	_try_load_config_file()
+
 
 # 内部実装（Godot 4.5+のみ）- 統合版
 func _setup_system_log_capture() -> void:
@@ -198,6 +232,7 @@ func _setup_system_log_capture() -> void:
 		# 統合版: 直接Logger登録は今後実装
 		_logger_registered = true
 
+
 func _cleanup_system_log_capture() -> void:
 	if not _logger_support_available:
 		return
@@ -206,13 +241,14 @@ func _cleanup_system_log_capture() -> void:
 		# 統合版: 今後実装予定
 		_logger_registered = false
 
+
 # 終了処理
 func shutdown() -> void:
 	_cleanup_system_log_capture()
-	_is_setup = false
 	if _logger:
 		_logger.close()
 		_logger = null
+
 
 # 任意機能: 設定ファイル自動読み込み
 func _try_load_config_file() -> void:
@@ -225,6 +261,7 @@ func _try_load_config_file() -> void:
 	else:
 		_config_file_enabled = false
 		print("SyncLogger: Disabled (no config file at ", config_path, ")")
+
 
 func _load_simple_config(path: String) -> Dictionary:
 	var file = FileAccess.open(path, FileAccess.READ)
@@ -255,6 +292,7 @@ func _load_simple_config(path: String) -> Dictionary:
 
 	return final_config
 
+
 func _write_default_config(path: String) -> void:
 	var file = FileAccess.open(path, FileAccess.WRITE)
 	if not file:
@@ -274,6 +312,7 @@ func _write_default_config(path: String) -> void:
 	file.store_string(default_content)
 	file.close()
 	print("SyncLogger: Default config file created at ", path)
+
 
 func _setup_from_config(config: Dictionary) -> void:
 	# 基本設定

@@ -58,7 +58,8 @@ func test_send_returns_false_on_invalid_parameters():
 	var result = udp_sender.send("test")
 
 	assert_false(result, "無効なポートでの送信は失敗する")
-	
+
+
 func test_send_returns_false_on_empty_host():
 	# 空のホスト名でセットアップ
 	udp_sender.setup("", 9999)

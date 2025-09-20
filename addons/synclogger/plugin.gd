@@ -4,6 +4,7 @@ extends EditorPlugin
 const AUTOLOAD_NAME = "SyncLogger"
 const AUTOLOAD_PATH = "res://addons/synclogger/synclogger.gd"
 
+
 func _enter_tree():
 	add_autoload_singleton(AUTOLOAD_NAME, AUTOLOAD_PATH)
 	print("SyncLogger addon enabled")
@@ -20,6 +21,7 @@ func _enter_tree():
 	else:
 		print("Note: System log capture requires Godot 4.5+")
 		print("      Current version runs in compatibility mode")
+
 
 func _exit_tree():
 	remove_autoload_singleton(AUTOLOAD_NAME)

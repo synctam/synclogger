@@ -8,6 +8,7 @@ const SyncLoggerMain = preload("res://addons/synclogger/synclogger.gd")
 var _sync_logger: SyncLoggerMain
 var _config_path: String
 
+
 func before_each():
 	_sync_logger = SyncLoggerMain.new()
 	add_child_autofree(_sync_logger)
@@ -15,6 +16,7 @@ func before_each():
 	# テスト前に設定ファイルを削除
 	if FileAccess.file_exists(_config_path):
 		DirAccess.remove_absolute(_config_path)
+
 
 func after_each():
 	if _sync_logger:
@@ -24,12 +26,14 @@ func after_each():
 		DirAccess.remove_absolute(_config_path)
 	_sync_logger = null
 
+
 func test_config_file_disabled_when_no_file():
 	# テスト: 設定ファイルがない場合、SyncLoggerが無効化されること
 	# テスト用に状態リセット（ファイル削除後の状態再評価）
 	_sync_logger._reset_config_state()
 	assert_false(_sync_logger.is_config_file_enabled(), "設定ファイルなしでは無効であること")
 	assert_false(_sync_logger.info("test message"), "ログ送信が無効であること")
+
 
 func test_empty_config_file_creates_default():
 	# テスト: 空の設定ファイルがデフォルト設定を作成すること
@@ -51,6 +55,7 @@ func test_empty_config_file_creates_default():
 	assert_true(content.contains("127.0.0.1"), "デフォルトホストが書き込まれること")
 	assert_true(content.contains("9999"), "デフォルトポートが書き込まれること")
 
+
 func test_invalid_json_overwrites_with_default():
 	# テスト: 無効なJSONが正しいJSONで上書きされること
 	var file = FileAccess.open(_config_path, FileAccess.WRITE)
@@ -71,13 +76,10 @@ func test_invalid_json_overwrites_with_default():
 	var parse_result = json.parse(content)
 	assert_eq(parse_result, OK, "上書きされたJSONが有効であること")
 
+
 func test_valid_config_loads_correctly():
 	# テスト: 正しい設定ファイルが正常に読み込まれること
-	var custom_config = {
-		"host": "192.168.1.100",
-		"port": 8888,
-		"system_capture": false
-	}
+	var custom_config = {"host": "192.168.1.100", "port": 8888, "system_capture": false}
 
 	var file = FileAccess.open(_config_path, FileAccess.WRITE)
 	file.store_string(JSON.stringify(custom_config))
@@ -90,11 +92,13 @@ func test_valid_config_loads_correctly():
 	assert_eq(_sync_logger.get_host(), "192.168.1.100", "カスタムホストが設定されること")
 	assert_eq(_sync_logger.get_port(), 8888, "カスタムポートが設定されること")
 
+
 func test_compatibility_info_includes_config_status():
 	# テスト: 互換性情報に設定ファイル状態が含まれること
 	var info = _sync_logger.get_compatibility_info()
 	assert_true(info.has("config_file_enabled"), "設定ファイル状態が含まれること")
 	assert_false(info.config_file_enabled, "初期状態では無効であること")
+
 
 func test_file_write_permission_error():
 	# テスト: ファイル書き込み権限エラーの処理
@@ -106,6 +110,7 @@ func test_file_write_permission_error():
 	# 権限エラーのシミュレーションは困難なため、正常ケースで確認
 	_sync_logger._ready()
 	assert_true(_sync_logger.is_config_file_enabled(), "書き込み可能な場合は有効化されること")
+
 
 func test_json_non_dictionary_type():
 	# テスト: JSONが配列など辞書以外の場合の処理
@@ -120,12 +125,10 @@ func test_json_non_dictionary_type():
 	assert_eq(_sync_logger.get_host(), "127.0.0.1", "デフォルトホストが適用されること")
 	assert_eq(_sync_logger.get_port(), 9999, "デフォルトポートが適用されること")
 
+
 func test_partial_config_merging():
 	# テスト: 部分設定とデフォルト値のマージ
-	var partial_config = {
-		"host": "192.168.1.50",
-		"unknown_key": "should_be_ignored"
-	}
+	var partial_config = {"host": "192.168.1.50", "unknown_key": "should_be_ignored"}
 
 	var file = FileAccess.open(_config_path, FileAccess.WRITE)
 	file.store_string(JSON.stringify(partial_config))
@@ -136,6 +139,7 @@ func test_partial_config_merging():
 	assert_true(_sync_logger.is_config_file_enabled(), "部分設定で有効化されること")
 	assert_eq(_sync_logger.get_host(), "192.168.1.50", "指定されたホストが適用されること")
 	assert_eq(_sync_logger.get_port(), 9999, "未指定項目にデフォルト値が適用されること")
+
 
 func test_all_log_levels_silent_ignore():
 	# テスト: 全ログレベルがsilent ignoreされること
@@ -148,6 +152,7 @@ func test_all_log_levels_silent_ignore():
 	assert_false(_sync_logger.critical("test"), "criticalがsilent ignoreされること")
 	assert_false(_sync_logger.log("test"), "logがsilent ignoreされること")
 
+
 func test_whitespace_only_file():
 	# テスト: 空白のみのファイルの処理
 	var file = FileAccess.open(_config_path, FileAccess.WRITE)
@@ -158,6 +163,7 @@ func test_whitespace_only_file():
 
 	assert_true(_sync_logger.is_config_file_enabled(), "空白のみファイルで有効化されること")
 	assert_eq(_sync_logger.get_host(), "127.0.0.1", "デフォルト設定が適用されること")
+
 
 func test_system_capture_config_loading():
 	# テスト: システムキャプチャ設定の読み込み
@@ -181,13 +187,17 @@ func test_system_capture_config_loading():
 		# system_capture: falseの設定ファイルのため、システムキャプチャは無効になる
 		assert_false(_sync_logger.is_system_capture_enabled(), "設定ファイルsystem_capture:falseが反映されること")
 		assert_false(_sync_logger.is_capture_errors_enabled(), "設定ファイルcapture_errors:falseが反映されること")
-		assert_false(_sync_logger.is_capture_messages_enabled(), "設定ファイルcapture_messages:falseが反映されること")
+		assert_false(
+			_sync_logger.is_capture_messages_enabled(), "設定ファイルcapture_messages:falseが反映されること"
+		)
+
 
 func test_config_file_path_api():
 	# テスト: 設定ファイルパスAPIの動作
 	var path = _sync_logger.get_config_file_path()
 	assert_true(path.begins_with("user://"), "user://で始まること")
 	assert_true(path.ends_with(".synclogger.json"), ".synclogger.jsonで終わること")
+
 
 func test_traditional_setup_after_config_load():
 	# テスト: 設定ファイル読み込み後の従来setup()メソッドの動作

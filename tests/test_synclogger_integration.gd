@@ -9,10 +9,12 @@ var _sync_logger: SyncLoggerMain
 var _test_host: String = "127.0.0.1"
 var _test_port: int = 9999
 
+
 func before_each():
 	_sync_logger = SyncLoggerMain.new()
 	# Orphans対策: テスト用に親ノードを設定
 	add_child_autofree(_sync_logger)
+
 
 func after_each():
 	if _sync_logger:
@@ -20,12 +22,14 @@ func after_each():
 	# add_child_autofreeが自動的に解放するのでqueue_freeは不要
 	_sync_logger = null
 
+
 func test_synclogger_with_interceptor_setup():
 	# テスト: SyncLoggerが Interceptor付きで正常にセットアップできること
 	_sync_logger.setup(_test_host, _test_port)
 
 	assert_true(_sync_logger.is_setup(), "SyncLoggerがセットアップされること")
 	assert_true(_sync_logger.is_system_capture_enabled(), "システムキャプチャがデフォルト有効であること")
+
 
 func test_system_log_capture_control():
 	# テスト: システムログキャプチャの制御
@@ -45,6 +49,7 @@ func test_system_log_capture_control():
 	_sync_logger.enable_system_capture()
 	assert_true(_sync_logger.is_system_capture_enabled(), "システムキャプチャを再有効化できること")
 
+
 func test_selective_capture_control():
 	# テスト: 選択的キャプチャ制御
 	_sync_logger.setup(_test_host, _test_port)
@@ -58,6 +63,7 @@ func test_selective_capture_control():
 	_sync_logger.set_capture_messages(false)
 	assert_false(_sync_logger.is_capture_messages_enabled(), "メッセージキャプチャを無効化できること")
 
+
 func test_system_log_stats():
 	# テスト: システムログ統計情報の取得
 	_sync_logger.setup(_test_host, _test_port)
@@ -67,6 +73,7 @@ func test_system_log_stats():
 	assert_true(stats.has("godot_logger_enabled"), "統計情報にgodot_logger_enabledが含まれること")
 	assert_true(stats.has("capture_messages"), "統計情報にcapture_messagesが含まれること")
 	assert_true(stats.has("capture_errors"), "統計情報にcapture_errorsが含まれること")
+
 
 func test_traditional_api_still_works():
 	# テスト: 従来のAPIが引き続き動作すること
@@ -78,12 +85,14 @@ func test_traditional_api_still_works():
 
 	_sync_logger._reset_config_state()
 	_sync_logger.setup(_test_host, _test_port)
+	_sync_logger.set_test_mode(true)  # テスト環境での接続エラー回避
 
 	# 従来のログメソッドが動作すること
 	assert_true(_sync_logger.info("テスト情報"), "infoメソッドが動作すること")
 	assert_true(_sync_logger.debug("テストデバッグ"), "debugメソッドが動作すること")
 	assert_true(_sync_logger.warning("テスト警告"), "warningメソッドが動作すること")
 	assert_true(_sync_logger.error("テストエラー"), "errorメソッドが動作すること")
+
 
 func test_interceptor_lifecycle():
 	# テスト: Interceptorのライフサイクル管理
