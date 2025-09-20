@@ -3,8 +3,6 @@ extends Node
 # メインスレッド版SyncLoggerのデモ
 # スレッドを使わずに直接ログ送信をテスト
 
-const MainThreadSimpleLogger = preload("res://addons/synclogger/mainthread_simple_logger.gd")
-
 var simple_logger: MainThreadSimpleLogger
 
 func _ready():

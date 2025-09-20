@@ -69,6 +69,13 @@ func test_system_log_stats():
 
 func test_traditional_api_still_works():
 	# テスト: 従来のAPIが引き続き動作すること
+	# テスト用設定ファイルを作成
+	var config_path = _sync_logger.get_config_file_path()
+	var file = FileAccess.open(config_path, FileAccess.WRITE)
+	file.store_string("{}")
+	file.close()
+
+	_sync_logger._reset_config_state()
 	_sync_logger.setup(_test_host, _test_port)
 
 	# 従来のログメソッドが動作すること

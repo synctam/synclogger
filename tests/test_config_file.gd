@@ -26,6 +26,8 @@ func after_each():
 
 func test_config_file_disabled_when_no_file():
 	# テスト: 設定ファイルがない場合、SyncLoggerが無効化されること
+	# テスト用に状態リセット（ファイル削除後の状態再評価）
+	_sync_logger._reset_config_state()
 	assert_false(_sync_logger.is_config_file_enabled(), "設定ファイルなしでは無効であること")
 	assert_false(_sync_logger.info("test message"), "ログ送信が無効であること")
 
@@ -35,8 +37,8 @@ func test_empty_config_file_creates_default():
 	var file = FileAccess.open(_config_path, FileAccess.WRITE)
 	file.close()
 
-	# SyncLoggerを再初期化
-	_sync_logger._ready()
+	# SyncLoggerを再初期化（テスト用状態リセット）
+	_sync_logger._reset_config_state()
 
 	assert_true(_sync_logger.is_config_file_enabled(), "空ファイルで有効化されること")
 	assert_true(FileAccess.file_exists(_config_path), "設定ファイルが存在すること")
@@ -55,8 +57,8 @@ func test_invalid_json_overwrites_with_default():
 	file.store_string("invalid json content")
 	file.close()
 
-	# SyncLoggerを再初期化
-	_sync_logger._ready()
+	# SyncLoggerを再初期化（テスト用状態リセット）
+	_sync_logger._reset_config_state()
 
 	assert_true(_sync_logger.is_config_file_enabled(), "無効JSONでも有効化されること")
 
@@ -81,8 +83,8 @@ func test_valid_config_loads_correctly():
 	file.store_string(JSON.stringify(custom_config))
 	file.close()
 
-	# SyncLoggerを再初期化
-	_sync_logger._ready()
+	# SyncLoggerを再初期化（テスト用状態リセット）
+	_sync_logger._reset_config_state()
 
 	assert_true(_sync_logger.is_config_file_enabled(), "正しい設定で有効化されること")
 	assert_eq(_sync_logger.get_host(), "192.168.1.100", "カスタムホストが設定されること")

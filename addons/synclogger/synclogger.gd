@@ -54,6 +54,10 @@ func setup(host: String, port: int) -> void:
 	_logger.setup(host, port)
 	_is_setup = true
 
+	# サニタイズ設定を確実に有効化（ANSI・制御文字除去）
+	_logger.set_sanitize_ansi(true)
+	_logger.set_sanitize_control_chars(true)
+
 	# システムログキャプチャを自動設定（Godot 4.5+のみ）
 	if _logger_support_available:
 		_setup_system_log_capture()
@@ -180,6 +184,34 @@ func is_config_file_enabled() -> bool:
 
 func get_config_file_path() -> String:
 	return "user://" + CONFIG_FILENAME
+
+# サニタイズ設定API（上位レベル制御）
+func set_sanitize_ansi(enabled: bool) -> void:
+	"""ANSIエスケープシーケンス除去の設定"""
+	if _logger:
+		_logger.set_sanitize_ansi(enabled)
+
+func set_sanitize_control_chars(enabled: bool) -> void:
+	"""制御文字除去の設定"""
+	if _logger:
+		_logger.set_sanitize_control_chars(enabled)
+
+func is_sanitize_ansi_enabled() -> bool:
+	if _logger:
+		return _logger.is_sanitize_ansi_enabled()
+	return true
+
+func is_sanitize_control_chars_enabled() -> bool:
+	if _logger:
+		return _logger.is_sanitize_control_chars_enabled()
+	return true
+
+# テスト用の状態リセット機能
+func _reset_config_state() -> void:
+	"""テスト用: 設定ファイル状態をリセットして再読み込み"""
+	_config_file_enabled = false
+	_is_setup = false
+	_try_load_config_file()
 
 # 内部実装（Godot 4.5+のみ）
 func _setup_system_log_capture() -> void:

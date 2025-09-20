@@ -21,8 +21,11 @@ func _log_message(message: String, error: bool) -> void:
 
 	_mutex.lock()
 
-	var level = "error" if error else "info"
-	_sync_logger._send_log(message, level, "godot_system")
+	# MainThreadSimpleLoggerの公開APIを使用してサニタイズ処理を適用
+	if error:
+		_sync_logger.error(message, "godot_system")
+	else:
+		_sync_logger.info(message, "godot_system")
 
 	_mutex.unlock()
 
@@ -38,7 +41,16 @@ func _log_error(function: String, file: String, line: int, code: String,
 	var error_msg = "ERROR in %s:%d (%s): %s" % [file, line, function, rationale]
 	var error_level = _convert_error_type(error_type)
 
-	_sync_logger._send_log(error_msg, error_level, "godot_error")
+	# MainThreadSimpleLoggerの公開APIを使用してサニタイズ処理を適用
+	match error_level:
+		"error":
+			_sync_logger.error(error_msg, "godot_error")
+		"warning":
+			_sync_logger.warning(error_msg, "godot_error")
+		"critical":
+			_sync_logger.critical(error_msg, "godot_error")
+		_:
+			_sync_logger.error(error_msg, "godot_error")
 
 	_mutex.unlock()
 
