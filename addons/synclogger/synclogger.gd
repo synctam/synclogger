@@ -1,16 +1,16 @@
-class_name SyncLoggerMain
+class_name SyncLoggerNode
 extends Node
 
 # 内部カスタムLoggerクラス（システムログキャプチャ用）
 class SyncCustomLogger:
 	extends Logger
 
-	var _sync_main: SyncLoggerMain
+	var _sync_main: SyncLoggerNode
 	var _enabled: bool = true
 	var _capture_messages: bool = true
 	var _capture_errors: bool = true
 
-	func _init(sync_main: SyncLoggerMain):
+	func _init(sync_main: SyncLoggerNode):
 		_sync_main = sync_main
 
 	# Logger仮想メソッドの実装
@@ -19,7 +19,7 @@ class SyncCustomLogger:
 			return
 
 		var level = "error" if error else "info"
-		_sync_main._send_intercepted_log(message, level, "godot_system")
+		_sync_main._send_log(message, level, "godot_system", true)
 
 	func _log_error(function: String, file: String, line: int, code: String,
 				   rationale: String, editor_notify: bool, error_type: int,
@@ -31,7 +31,7 @@ class SyncCustomLogger:
 		var error_msg = "ERROR in %s:%d (%s): %s" % [file, line, function, rationale]
 		var error_level = _convert_error_type(error_type)
 
-		_sync_main._send_intercepted_log(error_msg, error_level, "godot_error")
+		_sync_main._send_log(error_msg, error_level, "godot_error", true)
 
 	# エラータイプをログレベルに変換
 	func _convert_error_type(error_type: int) -> String:
@@ -70,6 +70,10 @@ var _udp_sender: UDPSender
 var _sanitize_ansi: bool = true  # デフォルト: ANSI文字を除去
 var _sanitize_control_chars: bool = true  # デフォルト: 制御文字を除去
 
+# RegEx最適化: クラス変数として1回だけ初期化
+var _ansi_regex: RegEx
+var _control_chars_regex: RegEx
+
 # システムログキャプチャ設定（Godot 4.5+のみ有効）
 var _system_capture_enabled: bool = true
 var _capture_messages: bool = true
@@ -93,6 +97,13 @@ const DEFAULT_CONFIG = {
 func _init():
 	_udp_sender = UDPSender.new()
 	_check_logger_support()
+
+	# RegEx初期化（パフォーマンス最適化）
+	_ansi_regex = RegEx.new()
+	_ansi_regex.compile("\\x1b\\[[0-9;]*[a-zA-Z]")
+
+	_control_chars_regex = RegEx.new()
+	_control_chars_regex.compile("[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F\\x7F-\\x9F]")
 
 	# カスタムLogger初期化
 	if _logger_support_available:
@@ -183,12 +194,27 @@ func critical(message: String, category: String = "general") -> bool:
 	return _send_log(message, "critical", category)
 
 # 共通のログ送信処理（MainThreadSimpleLoggerから統合）
-func _send_log(message: String, level: String, category: String) -> bool:
-	if not _can_log():
-		return false
+func _send_log(message: String, level: String, category: String, is_system: bool = false) -> bool:
+	# システムログ or 通常ログの判定
+	if is_system:
+		if not _udp_sender or not _udp_sender._ensure_connection():
+			return false
+	else:
+		if not _can_log():
+			return false
+
+	# システムログの場合は特別なプレフィックスを追加
+	var processed_message = message
+	if is_system:
+		processed_message = "[SYSTEM] " + message
+
+	# メッセージサイズ制限（セキュリティ対策）
+	const MAX_MESSAGE_SIZE = 4096
+	if processed_message.length() > MAX_MESSAGE_SIZE:
+		processed_message = processed_message.left(MAX_MESSAGE_SIZE) + "...[truncated]"
 
 	# JSONコントロール文字問題修正: ANSIエスケープシーケンスを先に除去
-	var sanitized_message = _sanitize_message_for_json(message)
+	var sanitized_message = _sanitize_message_for_json(processed_message)
 
 	# 改行処理問題修正: サニタイズ後にメッセージをクリーンアップ
 	sanitized_message = sanitized_message.strip_edges()
@@ -201,30 +227,6 @@ func _send_log(message: String, level: String, category: String) -> bool:
 	var json_string = JSON.stringify(log_data)
 	return _udp_sender.send(json_string)
 
-
-# システムログ横取り専用送信メソッド
-func _send_intercepted_log(message: String, level: String, category: String) -> bool:
-	if not _udp_sender or not _udp_sender._ensure_connection():
-		return false
-
-	# 横取りログには特別なプレフィックスを追加
-	var prefixed_message = "[SYSTEM] " + message
-
-	# セキュリティ: メッセージサイズ制限
-	const MAX_MESSAGE_SIZE = 4096
-	if prefixed_message.length() > MAX_MESSAGE_SIZE:
-		prefixed_message = prefixed_message.left(MAX_MESSAGE_SIZE) + "...[truncated]"
-
-	# サニタイズ処理
-	var sanitized_message = _sanitize_message_for_json(prefixed_message)
-	sanitized_message = sanitized_message.strip_edges()
-
-	if sanitized_message.is_empty() or sanitized_message.length() <= 2:
-		return false
-
-	var log_data = _create_log_data(sanitized_message, level, category)
-	var json_string = JSON.stringify(log_data)
-	return _udp_sender.send(json_string)
 
 
 # ======== サニタイズ機能（MainThreadSimpleLoggerから統合） ========
@@ -258,61 +260,22 @@ func _sanitize_message_for_json(message: String) -> String:
 
 	return cleaned
 
-# ANSI エスケープシーケンス除去
+# ANSI エスケープシーケンス除去（最適化済み）
 func _remove_ansi_sequences(message: String) -> String:
 	var cleaned = message
 
-	# 非ESC形式のANSI（GUTで使用される形式）を除去
-	var bracket_patterns = [
-		"[0m",  # リセット
-		"[1m",  # 太字
-		"[4m",  # 下線
-		"[33m",  # 黄色
-		"[31m",  # 赤色
-		"[32m",  # 緑色
-		"[35m",  # マゼンタ
-		"[36m",  # シアン
-		"[37m",  # 白色
-	]
+	# 効率的なANSI除去: RegExを1回だけ使用
+	cleaned = _ansi_regex.sub(cleaned, "", true)
 
-	# 既知のパターンを除去
-	for pattern in bracket_patterns:
-		cleaned = cleaned.replace(pattern, "")
-
-	# ESC文字を含む標準ANSI除去
-	var esc_char = char(0x1b)  # ESC文字
-	var esc_patterns = [
-		esc_char + "[0m",  # リセット
-		esc_char + "[1m",  # 太字
-		esc_char + "[4m",  # 下線
-		esc_char + "[33m",  # 黄色
-		esc_char + "[31m",  # 赤色
-		esc_char + "[32m",  # 緑色
-		esc_char + "[35m",  # マゼンタ
-		esc_char + "[36m",  # シアン
-		esc_char + "[37m",  # 白色
-	]
-
-	# 既知のESCパターンを除去
-	for pattern in esc_patterns:
-		cleaned = cleaned.replace(pattern, "")
-
-	# 正規表現でその他のANSIシーケンスを除去
-	var regex = RegEx.new()
-	regex.compile("\\x1b\\[[0-9;]*[a-zA-Z]")
-	cleaned = regex.sub(cleaned, "", true)
-
-	# 残りのESC文字も除去
-	regex.compile("\\x1b.")
-	cleaned = regex.sub(cleaned, "", true)
+	# ESC文字の除去
+	var esc_char = char(0x1b)
+	cleaned = cleaned.replace(esc_char, "")
 
 	return cleaned
 
-# 制御文字除去
+# 制御文字除去（最適化済み）
 func _remove_control_characters(message: String) -> String:
-	var regex = RegEx.new()
-	regex.compile("[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F\\x7F-\\x9F]")
-	return regex.sub(message, "", true)
+	return _control_chars_regex.sub(message, "", true)
 
 # 内部ヘルパー統合
 func _create_log_data(message: String, level: String, category: String) -> Dictionary:
@@ -410,8 +373,6 @@ func get_config_file_path() -> String:
 	return "user://" + CONFIG_FILENAME
 
 
-# サニタイズ機能は MainThreadSimpleLogger で直接制御
-# 重複除去: 上位レベル制御API削除（setupメソッドで自動設定）
 
 
 # テスト用の状態リセット機能
