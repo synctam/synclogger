@@ -1,3 +1,4 @@
+# gdlint: disable=max-public-methods
 class_name SyncLoggerNode
 extends Node
 
@@ -26,11 +27,11 @@ class SyncCustomLogger:
 		function: String,
 		file: String,
 		line: int,
-		code: String,
+		_code: String,
 		rationale: String,
-		editor_notify: bool,
+		_editor_notify: bool,
 		error_type: int,
-		script_backtraces: Array
+		_script_backtraces: Array
 	) -> void:
 		if not _enabled or not _capture_errors:
 			return
@@ -46,8 +47,7 @@ class SyncCustomLogger:
 		# Note: Logger.ERROR_TYPE_* 定数が利用可能かチェック必要
 		if error_type == 1:  # WARNING相当
 			return "warning"
-		else:
-			return "error"
+		return "error"
 
 	# 制御メソッド
 	func set_enabled(enabled: bool) -> void:
@@ -72,7 +72,18 @@ class SyncCustomLogger:
 # SyncLogger - Godot用UDPログ送信システム（Phase 3統一設計）
 # 推奨パターン: SyncLogger.setup("127.0.0.1", 9999) → SyncLogger.log("message")
 
+# 定数定義
 const UDPSender = preload("res://addons/synclogger/udp_sender.gd")
+const CONFIG_FILENAME = ".synclogger.json"
+const DEFAULT_CONFIG = {
+	"host": "127.0.0.1",
+	"port": 9999,
+	"system_capture": true,
+	"capture_errors": true,
+	"capture_messages": true
+}
+
+# 変数定義
 var _udp_sender: UDPSender
 
 # サニタイズ設定
@@ -93,14 +104,6 @@ var _custom_logger: SyncCustomLogger
 
 # 設定ファイル機能
 var _config_file_enabled: bool = false
-const CONFIG_FILENAME = ".synclogger.json"
-const DEFAULT_CONFIG = {
-	"host": "127.0.0.1",
-	"port": 9999,
-	"system_capture": true,
-	"capture_errors": true,
-	"capture_messages": true
-}
 
 
 func _init():
