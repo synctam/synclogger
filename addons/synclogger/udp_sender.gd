@@ -75,6 +75,7 @@ func close() -> void:
 
 # ======== 設定アクセサー（重複プロパティ削除後の代替） ========
 
+
 func is_setup() -> bool:
 	"""設定完了状態を確認"""
 	return _is_setup
@@ -86,6 +87,7 @@ func is_udp_connected() -> bool:
 
 
 # ======== Phase 2: UDP接続最適化メソッド ========
+
 
 func _ensure_connection() -> bool:
 	"""接続確立の自動化"""
@@ -102,8 +104,4 @@ func _ensure_connection() -> bool:
 
 func _retry_send(data: String) -> bool:
 	"""送信失敗時の再試行ロジック"""
-	if not _ensure_connection():
-		return false
-
-	var bytes = data.to_utf8_buffer()
-	return _udp_socket.put_packet(bytes) == OK
+	return _ensure_connection() and send(data)

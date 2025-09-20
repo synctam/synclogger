@@ -1,6 +1,7 @@
 class_name SyncLoggerNode
 extends Node
 
+
 # 内部カスタムLoggerクラス（システムログキャプチャ用）
 class SyncCustomLogger:
 	extends Logger
@@ -21,9 +22,16 @@ class SyncCustomLogger:
 		var level = "error" if error else "info"
 		_sync_main._send_log(message, level, "godot_system", true)
 
-	func _log_error(function: String, file: String, line: int, code: String,
-				   rationale: String, editor_notify: bool, error_type: int,
-				   script_backtraces: Array) -> void:
+	func _log_error(
+		function: String,
+		file: String,
+		line: int,
+		code: String,
+		rationale: String,
+		editor_notify: bool,
+		error_type: int,
+		script_backtraces: Array
+	) -> void:
 		if not _enabled or not _capture_errors:
 			return
 
@@ -59,6 +67,7 @@ class SyncCustomLogger:
 
 	func is_capture_errors_enabled() -> bool:
 		return _capture_errors
+
 
 # SyncLogger - Godot用UDPログ送信システム（Phase 3統一設計）
 # 推奨パターン: SyncLogger.setup("127.0.0.1", 9999) → SyncLogger.log("message")
@@ -118,10 +127,10 @@ func _ready():
 func _check_logger_support():
 	if ClassDB.class_exists("Logger"):
 		_logger_support_available = true
-		print("SyncLogger: Godot 4.5+ Logger integration enabled")
+		# Godot 4.5+ Logger integration enabled
 	else:
 		_logger_support_available = false
-		print("SyncLogger: Running in compatibility mode (Godot 4.0-4.4)")
+		# Running in compatibility mode (Godot 4.0-4.4)
 
 
 func setup(host: String, port: int) -> void:
@@ -165,43 +174,42 @@ func get_queue_size() -> int:
 	return 0
 
 
-# 条件チェック統一化（設定ファイル任意化）
-func _can_log() -> bool:
-	return _udp_sender != null and _udp_sender.is_setup()
-
-
 # ======== ログAPI - 直接実装（委譲パターン削除） ========
+
 
 func log(message: String, category: String = "general") -> bool:
 	return _send_log(message, "info", category)
 
+
 func trace(message: String, category: String = "general") -> bool:
 	return _send_log(message, "trace", category)
+
 
 func debug(message: String, category: String = "general") -> bool:
 	return _send_log(message, "debug", category)
 
+
 func info(message: String, category: String = "general") -> bool:
 	return _send_log(message, "info", category)
+
 
 func warning(message: String, category: String = "general") -> bool:
 	return _send_log(message, "warning", category)
 
+
 func error(message: String, category: String = "general") -> bool:
 	return _send_log(message, "error", category)
+
 
 func critical(message: String, category: String = "general") -> bool:
 	return _send_log(message, "critical", category)
 
+
 # 共通のログ送信処理（MainThreadSimpleLoggerから統合）
 func _send_log(message: String, level: String, category: String, is_system: bool = false) -> bool:
-	# システムログ or 通常ログの判定
-	if is_system:
-		if not _udp_sender or not _udp_sender._ensure_connection():
-			return false
-	else:
-		if not _can_log():
-			return false
+	# 統一された接続チェック
+	if not is_running():
+		return false
 
 	# システムログの場合は特別なプレフィックスを追加
 	var processed_message = message
@@ -228,23 +236,27 @@ func _send_log(message: String, level: String, category: String, is_system: bool
 	return _udp_sender.send(json_string)
 
 
-
 # ======== サニタイズ機能（MainThreadSimpleLoggerから統合） ========
+
 
 # サニタイズ設定API
 func set_sanitize_ansi(enabled: bool) -> void:
 	"""ANSIエスケープシーケンスの除去を設定"""
 	_sanitize_ansi = enabled
 
+
 func set_sanitize_control_chars(enabled: bool) -> void:
 	"""制御文字の除去を設定"""
 	_sanitize_control_chars = enabled
 
+
 func is_sanitize_ansi_enabled() -> bool:
 	return _sanitize_ansi
 
+
 func is_sanitize_control_chars_enabled() -> bool:
 	return _sanitize_control_chars
+
 
 # JSONエンコード用メッセージサニタイズ
 func _sanitize_message_for_json(message: String) -> String:
@@ -260,6 +272,7 @@ func _sanitize_message_for_json(message: String) -> String:
 
 	return cleaned
 
+
 # ANSI エスケープシーケンス除去（最適化済み）
 func _remove_ansi_sequences(message: String) -> String:
 	var cleaned = message
@@ -273,9 +286,11 @@ func _remove_ansi_sequences(message: String) -> String:
 
 	return cleaned
 
+
 # 制御文字除去（最適化済み）
 func _remove_control_characters(message: String) -> String:
 	return _control_chars_regex.sub(message, "", true)
+
 
 # 内部ヘルパー統合
 func _create_log_data(message: String, level: String, category: String) -> Dictionary:
@@ -293,7 +308,7 @@ func _create_log_data(message: String, level: String, category: String) -> Dicti
 func enable_system_capture() -> bool:
 	"""Enable system log capture (Godot 4.5+ only)"""
 	if not _logger_support_available:
-		print("SyncLogger: System log capture requires Godot 4.5+")
+		# System log capture requires Godot 4.5+
 		return false
 
 	_system_capture_enabled = true
@@ -307,7 +322,7 @@ func is_system_capture_enabled() -> bool:
 
 func set_capture_errors(enabled: bool) -> void:
 	if not _logger_support_available:
-		print("SyncLogger: Error capture requires Godot 4.5+")
+		# Error capture requires Godot 4.5+
 		return
 
 	_capture_errors = enabled
@@ -317,7 +332,7 @@ func set_capture_errors(enabled: bool) -> void:
 
 func set_capture_messages(enabled: bool) -> void:
 	if not _logger_support_available:
-		print("SyncLogger: Message capture requires Godot 4.5+")
+		# Message capture requires Godot 4.5+
 		return
 
 	_capture_messages = enabled
@@ -373,8 +388,6 @@ func get_config_file_path() -> String:
 	return "user://" + CONFIG_FILENAME
 
 
-
-
 # テスト用の状態リセット機能
 func _reset_config_state() -> void:
 	"""テスト用: 設定ファイル状態をリセットして再読み込み"""
@@ -397,7 +410,7 @@ func _setup_system_log_capture() -> void:
 		# 重要: OS.add_logger()でGodotエンジンに登録
 		OS.add_logger(_custom_logger)
 		_logger_registered = true
-		print("SyncLogger: System log capture activated")
+		# System log capture activated
 
 
 func _cleanup_system_log_capture() -> void:
@@ -407,7 +420,7 @@ func _cleanup_system_log_capture() -> void:
 	if _custom_logger and _logger_registered:
 		OS.remove_logger(_custom_logger)
 		_logger_registered = false
-		print("SyncLogger: System log capture deactivated")
+		# System log capture deactivated
 
 
 # 終了処理
@@ -424,10 +437,10 @@ func _try_load_config_file() -> void:
 		var config = _load_simple_config(config_path)
 		_setup_from_config(config)
 		_config_file_enabled = true
-		print("SyncLogger: Config loaded and merged with defaults")
+		# Config loaded and merged with defaults
 	else:
 		_config_file_enabled = false
-		print("SyncLogger: Disabled (no config file at ", config_path, ")")
+		# Disabled (no config file)
 
 
 func _load_simple_config(path: String) -> Dictionary:
@@ -440,14 +453,14 @@ func _load_simple_config(path: String) -> Dictionary:
 
 	if content.is_empty():
 		_write_default_config(path)
-		print("SyncLogger: Empty config file, created default config")
+		# Empty config file, created default config
 		return DEFAULT_CONFIG.duplicate()
 
 	var json = JSON.new()
 	var parse_result = json.parse(content)
 
 	if parse_result != OK or not json.data is Dictionary:
-		print("SyncLogger: Invalid JSON detected, overwriting with defaults")
+		# Invalid JSON detected, overwriting with defaults
 		_write_default_config(path)
 		return DEFAULT_CONFIG.duplicate()
 
@@ -463,7 +476,7 @@ func _load_simple_config(path: String) -> Dictionary:
 func _write_default_config(path: String) -> void:
 	var file = FileAccess.open(path, FileAccess.WRITE)
 	if not file:
-		print("SyncLogger: Cannot write config file (permission error)")
+		# Cannot write config file (permission error)
 		return
 
 	# コメント付きJSONで書き込み
@@ -478,7 +491,7 @@ func _write_default_config(path: String) -> void:
 
 	file.store_string(default_content)
 	file.close()
-	print("SyncLogger: Default config file created at ", path)
+	# Default config file created
 
 
 func _setup_from_config(config: Dictionary) -> void:

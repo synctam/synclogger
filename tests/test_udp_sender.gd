@@ -71,6 +71,7 @@ func test_send_returns_false_on_empty_host():
 
 # ======== Phase 2: UDP接続最適化のテスト ========
 
+
 func test_ensure_connection_returns_true_when_setup_properly():
 	"""_ensure_connection()はセットアップ後にtrueを返す"""
 	udp_sender.setup("127.0.0.1", 9999)
