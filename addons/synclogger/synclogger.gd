@@ -4,7 +4,12 @@ extends Node
 # SyncLogger - Godot用UDPログ送信システム（Phase 3統一設計）
 # 推奨パターン: SyncLogger.setup("127.0.0.1", 9999) → SyncLogger.log("message")
 
-var _logger: MainThreadSimpleLogger
+const UDPSender = preload("res://addons/synclogger/udp_sender.gd")
+var _udp_sender: UDPSender
+
+# サニタイズ設定
+var _sanitize_ansi: bool = true  # デフォルト: ANSI文字を除去
+var _sanitize_control_chars: bool = true  # デフォルト: 制御文字を除去
 
 # システムログキャプチャ設定（Godot 4.5+のみ有効）
 var _system_capture_enabled: bool = true
@@ -26,7 +31,7 @@ const DEFAULT_CONFIG = {
 
 
 func _init():
-	_logger = MainThreadSimpleLogger.new()
+	_udp_sender = UDPSender.new()
 	_check_logger_support()
 
 
@@ -38,7 +43,7 @@ func _ready():
 func _check_logger_support():
 	if ClassDB.class_exists("Logger"):
 		_logger_support_available = true
-		_logger.enable_godot_logger_integration()
+		# TODO: 統合後にGodot Logger統合機能を再実装
 		print("SyncLogger: Godot 4.5+ Logger integration enabled")
 	else:
 		_logger_support_available = false
@@ -46,11 +51,12 @@ func _check_logger_support():
 
 
 func setup(host: String, port: int) -> void:
-	_logger.setup(host, port)
+	# 直接実装: UDPSenderを使用
+	_udp_sender.setup(host, port)
 
 	# サニタイズ設定を確実に有効化（ANSI・制御文字除去）
-	_logger.set_sanitize_ansi(true)
-	_logger.set_sanitize_control_chars(true)
+	_sanitize_ansi = true
+	_sanitize_control_chars = true
 
 	# システムログキャプチャを自動設定（Godot 4.5+のみ）
 	if _logger_support_available:
@@ -58,26 +64,26 @@ func setup(host: String, port: int) -> void:
 
 
 func get_host() -> String:
-	return _logger.get_host() if _logger != null else ""
+	return _udp_sender.get_host() if _udp_sender != null else ""
 
 
 func get_port() -> int:
-	return _logger.get_port() if _logger != null else 0
+	return _udp_sender.get_port() if _udp_sender != null else 0
 
 
 func is_setup() -> bool:
-	return _logger != null and _logger.is_setup()
+	return _udp_sender != null and _udp_sender.is_setup()
 
 
 func set_test_mode(enabled: bool) -> void:
 	"""テスト環境での接続エラー回避モード（テスト専用）"""
-	if _logger:
-		_logger.set_test_mode(enabled)
+	if _udp_sender:
+		_udp_sender.set_test_mode(enabled)
 
 
 # 互換性API（統合・簡素化）
 func is_running() -> bool:
-	return _logger != null and _logger.is_setup()
+	return _udp_sender != null and _udp_sender.is_setup()
 
 
 func get_queue_size() -> int:
@@ -87,41 +93,149 @@ func get_queue_size() -> int:
 
 # 条件チェック統一化（設定ファイル任意化）
 func _can_log() -> bool:
-	return _logger != null and _logger.is_setup()
+	return _udp_sender != null and _udp_sender.is_setup()
 
 
-# ログAPI - MainThreadSimpleLoggerに委譲
+# ======== ログAPI - 直接実装（委譲パターン削除） ========
+
 func log(message: String, category: String = "general") -> bool:
-	return _can_log() and _logger.log(message, category)
-
+	return _send_log(message, "info", category)
 
 func trace(message: String, category: String = "general") -> bool:
-	return _can_log() and _logger.trace(message, category)
-
+	return _send_log(message, "trace", category)
 
 func debug(message: String, category: String = "general") -> bool:
-	return _can_log() and _logger.debug(message, category)
-
+	return _send_log(message, "debug", category)
 
 func info(message: String, category: String = "general") -> bool:
-	return _can_log() and _logger.info(message, category)
-
+	return _send_log(message, "info", category)
 
 func warning(message: String, category: String = "general") -> bool:
-	return _can_log() and _logger.warning(message, category)
-
+	return _send_log(message, "warning", category)
 
 func error(message: String, category: String = "general") -> bool:
-	return _can_log() and _logger.error(message, category)
-
+	return _send_log(message, "error", category)
 
 func critical(message: String, category: String = "general") -> bool:
-	return _can_log() and _logger.critical(message, category)
+	return _send_log(message, "critical", category)
 
+# 共通のログ送信処理（MainThreadSimpleLoggerから統合）
+func _send_log(message: String, level: String, category: String) -> bool:
+	if not _can_log():
+		return false
+
+	# JSONコントロール文字問題修正: ANSIエスケープシーケンスを先に除去
+	var sanitized_message = _sanitize_message_for_json(message)
+
+	# 改行処理問題修正: サニタイズ後にメッセージをクリーンアップ
+	sanitized_message = sanitized_message.strip_edges()
+
+	# サニタイズ後に空メッセージの送信を停止（非常に短いメッセージも除外）
+	if sanitized_message.is_empty() or sanitized_message.length() <= 2:
+		return false
+
+	var log_data = _create_log_data(sanitized_message, level, category)
+	var json_string = JSON.stringify(log_data)
+	return _udp_sender.send(json_string)
+
+
+# ======== サニタイズ機能（MainThreadSimpleLoggerから統合） ========
+
+# サニタイズ設定API
+func set_sanitize_ansi(enabled: bool) -> void:
+	"""ANSIエスケープシーケンスの除去を設定"""
+	_sanitize_ansi = enabled
+
+func set_sanitize_control_chars(enabled: bool) -> void:
+	"""制御文字の除去を設定"""
+	_sanitize_control_chars = enabled
+
+func is_sanitize_ansi_enabled() -> bool:
+	return _sanitize_ansi
+
+func is_sanitize_control_chars_enabled() -> bool:
+	return _sanitize_control_chars
+
+# JSONエンコード用メッセージサニタイズ
+func _sanitize_message_for_json(message: String) -> String:
+	var cleaned = message
+
+	# ANSI文字除去（設定可能）
+	if _sanitize_ansi:
+		cleaned = _remove_ansi_sequences(cleaned)
+
+	# 制御文字除去（設定可能）
+	if _sanitize_control_chars:
+		cleaned = _remove_control_characters(cleaned)
+
+	return cleaned
+
+# ANSI エスケープシーケンス除去
+func _remove_ansi_sequences(message: String) -> String:
+	var cleaned = message
+
+	# 非ESC形式のANSI（GUTで使用される形式）を除去
+	var bracket_patterns = [
+		"[0m",  # リセット
+		"[1m",  # 太字
+		"[4m",  # 下線
+		"[33m",  # 黄色
+		"[31m",  # 赤色
+		"[32m",  # 緑色
+		"[35m",  # マゼンタ
+		"[36m",  # シアン
+		"[37m",  # 白色
+	]
+
+	# 既知のパターンを除去
+	for pattern in bracket_patterns:
+		cleaned = cleaned.replace(pattern, "")
+
+	# ESC文字を含む標準ANSI除去
+	var esc_char = char(0x1b)  # ESC文字
+	var esc_patterns = [
+		esc_char + "[0m",  # リセット
+		esc_char + "[1m",  # 太字
+		esc_char + "[4m",  # 下線
+		esc_char + "[33m",  # 黄色
+		esc_char + "[31m",  # 赤色
+		esc_char + "[32m",  # 緑色
+		esc_char + "[35m",  # マゼンタ
+		esc_char + "[36m",  # シアン
+		esc_char + "[37m",  # 白色
+	]
+
+	# 既知のESCパターンを除去
+	for pattern in esc_patterns:
+		cleaned = cleaned.replace(pattern, "")
+
+	# 正規表現でその他のANSIシーケンスを除去
+	var regex = RegEx.new()
+	regex.compile("\\x1b\\[[0-9;]*[a-zA-Z]")
+	cleaned = regex.sub(cleaned, "", true)
+
+	# 残りのESC文字も除去
+	regex.compile("\\x1b.")
+	cleaned = regex.sub(cleaned, "", true)
+
+	return cleaned
+
+# 制御文字除去
+func _remove_control_characters(message: String) -> String:
+	var regex = RegEx.new()
+	regex.compile("[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F\\x7F-\\x9F]")
+	return regex.sub(message, "", true)
 
 # 内部ヘルパー統合
 func _create_log_data(message: String, level: String, category: String) -> Dictionary:
-	return _logger._create_log_data(message, level, category)
+	return {
+		"timestamp": Time.get_unix_time_from_system(),
+		"frame": Engine.get_process_frames(),
+		"physics_frame": Engine.get_physics_frames(),
+		"level": level,
+		"category": category,
+		"message": message
+	}
 
 
 # 任意機能: システムログキャプチャ（Godot 4.5+のみ）
@@ -132,10 +246,7 @@ func enable_system_capture() -> bool:
 		return false
 
 	_system_capture_enabled = true
-	if _logger:
-		_logger.enable_godot_logger_integration()
-		if _logger.is_setup():
-			_setup_system_log_capture()
+	# TODO: 統合後にGodot Logger統合機能を再実装
 	return true
 
 
@@ -149,8 +260,7 @@ func set_capture_errors(enabled: bool) -> void:
 		return
 
 	_capture_errors = enabled
-	if _logger:
-		_logger.set_capture_errors(enabled)
+	# TODO: 統合後にGodot Logger統合機能を再実装
 
 
 func set_capture_messages(enabled: bool) -> void:
@@ -159,8 +269,7 @@ func set_capture_messages(enabled: bool) -> void:
 		return
 
 	_capture_messages = enabled
-	if _logger:
-		_logger.set_capture_messages(enabled)
+	# TODO: 統合後にGodot Logger統合機能を再実装
 
 
 func is_capture_errors_enabled() -> bool:
@@ -172,9 +281,13 @@ func is_capture_messages_enabled() -> bool:
 
 
 func get_system_log_stats() -> Dictionary:
-	if _logger:
-		return _logger.get_logger_stats()
-	return {"logger_support_available": _logger_support_available}
+	# TODO: 統合後にGodot Logger統合機能を再実装
+	return {
+		"godot_logger_enabled": false,  # 一時的に無効
+		"capture_messages": _capture_messages,
+		"capture_errors": _capture_errors,
+		"logger_support_available": _logger_support_available
+	}
 
 
 # バージョン情報API
@@ -186,7 +299,7 @@ func get_compatibility_info() -> Dictionary:
 	return {
 		"godot_version": Engine.get_version_info(),
 		"logger_support": _logger_support_available,
-		"interceptor_active": _logger != null and _logger.is_godot_logger_enabled(),
+		"interceptor_active": false,  # 一時的に無効
 		"system_capture_available": _logger_support_available,
 		"config_file_enabled": _config_file_enabled
 	}
@@ -215,8 +328,8 @@ func get_config_file_path() -> String:
 func _reset_config_state() -> void:
 	"""テスト用: 設定ファイル状態をリセットして再読み込み"""
 	_config_file_enabled = false
-	if _logger:
-		_logger._is_setup = false
+	if _udp_sender:
+		_udp_sender.close()
 	_try_load_config_file()
 
 
@@ -225,11 +338,8 @@ func _setup_system_log_capture() -> void:
 	if not _logger_support_available:
 		return
 
-	if _system_capture_enabled and _logger and not _logger_registered:
-		_logger.enable_godot_logger_integration()
-		_logger.set_capture_errors(_capture_errors)
-		_logger.set_capture_messages(_capture_messages)
-		# 統合版: 直接Logger登録は今後実装
+	if _system_capture_enabled and not _logger_registered:
+		# TODO: 統合後にGodot Logger統合機能を再実装
 		_logger_registered = true
 
 
@@ -237,17 +347,16 @@ func _cleanup_system_log_capture() -> void:
 	if not _logger_support_available:
 		return
 
-	if _logger and _logger_registered:
-		# 統合版: 今後実装予定
+	if _logger_registered:
+		# TODO: 統合後にGodot Logger統合機能を再実装
 		_logger_registered = false
 
 
 # 終了処理
 func shutdown() -> void:
 	_cleanup_system_log_capture()
-	if _logger:
-		_logger.close()
-		_logger = null
+	if _udp_sender:
+		_udp_sender.close()
 
 
 # 任意機能: 設定ファイル自動読み込み

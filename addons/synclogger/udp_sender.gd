@@ -78,3 +78,15 @@ func close() -> void:
 		_udp_socket.close()
 	_is_connected = false
 	_is_setup = false
+
+
+# ======== 設定アクセサー（重複プロパティ削除後の代替） ========
+
+func is_setup() -> bool:
+	"""設定完了状態を確認"""
+	return _is_setup
+
+
+func is_udp_connected() -> bool:
+	"""UDP接続状態を確認（基底クラスのis_connected()との競合回避）"""
+	return _is_connected and _udp_socket != null
