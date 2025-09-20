@@ -1,6 +1,65 @@
 class_name SyncLoggerMain
 extends Node
 
+# 内部カスタムLoggerクラス（システムログキャプチャ用）
+class SyncCustomLogger:
+	extends Logger
+
+	var _sync_main: SyncLoggerMain
+	var _enabled: bool = true
+	var _capture_messages: bool = true
+	var _capture_errors: bool = true
+
+	func _init(sync_main: SyncLoggerMain):
+		_sync_main = sync_main
+
+	# Logger仮想メソッドの実装
+	func _log_message(message: String, error: bool) -> void:
+		if not _enabled or not _capture_messages:
+			return
+
+		var level = "error" if error else "info"
+		_sync_main._send_intercepted_log(message, level, "godot_system")
+
+	func _log_error(function: String, file: String, line: int, code: String,
+				   rationale: String, editor_notify: bool, error_type: int,
+				   script_backtraces: Array) -> void:
+		if not _enabled or not _capture_errors:
+			return
+
+		# エラー情報を構造化
+		var error_msg = "ERROR in %s:%d (%s): %s" % [file, line, function, rationale]
+		var error_level = _convert_error_type(error_type)
+
+		_sync_main._send_intercepted_log(error_msg, error_level, "godot_error")
+
+	# エラータイプをログレベルに変換
+	func _convert_error_type(error_type: int) -> String:
+		# Note: Logger.ERROR_TYPE_* 定数が利用可能かチェック必要
+		if error_type == 1:  # WARNING相当
+			return "warning"
+		else:
+			return "error"
+
+	# 制御メソッド
+	func set_enabled(enabled: bool) -> void:
+		_enabled = enabled
+
+	func set_capture_messages(enabled: bool) -> void:
+		_capture_messages = enabled
+
+	func set_capture_errors(enabled: bool) -> void:
+		_capture_errors = enabled
+
+	func is_enabled() -> bool:
+		return _enabled
+
+	func is_capture_messages_enabled() -> bool:
+		return _capture_messages
+
+	func is_capture_errors_enabled() -> bool:
+		return _capture_errors
+
 # SyncLogger - Godot用UDPログ送信システム（Phase 3統一設計）
 # 推奨パターン: SyncLogger.setup("127.0.0.1", 9999) → SyncLogger.log("message")
 
@@ -17,6 +76,7 @@ var _capture_messages: bool = true
 var _capture_errors: bool = true
 var _logger_registered: bool = false
 var _logger_support_available: bool = false
+var _custom_logger: SyncCustomLogger
 
 # 設定ファイル機能
 var _config_file_enabled: bool = false
@@ -34,6 +94,10 @@ func _init():
 	_udp_sender = UDPSender.new()
 	_check_logger_support()
 
+	# カスタムLogger初期化
+	if _logger_support_available:
+		_custom_logger = SyncCustomLogger.new(self)
+
 
 func _ready():
 	_try_load_config_file()
@@ -43,7 +107,6 @@ func _ready():
 func _check_logger_support():
 	if ClassDB.class_exists("Logger"):
 		_logger_support_available = true
-		# TODO: 統合後にGodot Logger統合機能を再実装
 		print("SyncLogger: Godot 4.5+ Logger integration enabled")
 	else:
 		_logger_support_available = false
@@ -131,6 +194,31 @@ func _send_log(message: String, level: String, category: String) -> bool:
 	sanitized_message = sanitized_message.strip_edges()
 
 	# サニタイズ後に空メッセージの送信を停止（非常に短いメッセージも除外）
+	if sanitized_message.is_empty() or sanitized_message.length() <= 2:
+		return false
+
+	var log_data = _create_log_data(sanitized_message, level, category)
+	var json_string = JSON.stringify(log_data)
+	return _udp_sender.send(json_string)
+
+
+# システムログ横取り専用送信メソッド
+func _send_intercepted_log(message: String, level: String, category: String) -> bool:
+	if not _udp_sender or not _udp_sender._ensure_connection():
+		return false
+
+	# 横取りログには特別なプレフィックスを追加
+	var prefixed_message = "[SYSTEM] " + message
+
+	# セキュリティ: メッセージサイズ制限
+	const MAX_MESSAGE_SIZE = 4096
+	if prefixed_message.length() > MAX_MESSAGE_SIZE:
+		prefixed_message = prefixed_message.left(MAX_MESSAGE_SIZE) + "...[truncated]"
+
+	# サニタイズ処理
+	var sanitized_message = _sanitize_message_for_json(prefixed_message)
+	sanitized_message = sanitized_message.strip_edges()
+
 	if sanitized_message.is_empty() or sanitized_message.length() <= 2:
 		return false
 
@@ -246,7 +334,7 @@ func enable_system_capture() -> bool:
 		return false
 
 	_system_capture_enabled = true
-	# TODO: 統合後にGodot Logger統合機能を再実装
+	_setup_system_log_capture()
 	return true
 
 
@@ -260,7 +348,8 @@ func set_capture_errors(enabled: bool) -> void:
 		return
 
 	_capture_errors = enabled
-	# TODO: 統合後にGodot Logger統合機能を再実装
+	if _custom_logger:
+		_custom_logger.set_capture_errors(enabled)
 
 
 func set_capture_messages(enabled: bool) -> void:
@@ -269,7 +358,8 @@ func set_capture_messages(enabled: bool) -> void:
 		return
 
 	_capture_messages = enabled
-	# TODO: 統合後にGodot Logger統合機能を再実装
+	if _custom_logger:
+		_custom_logger.set_capture_messages(enabled)
 
 
 func is_capture_errors_enabled() -> bool:
@@ -281,12 +371,12 @@ func is_capture_messages_enabled() -> bool:
 
 
 func get_system_log_stats() -> Dictionary:
-	# TODO: 統合後にGodot Logger統合機能を再実装
 	return {
-		"godot_logger_enabled": false,  # 一時的に無効
+		"godot_logger_enabled": _logger_registered,
 		"capture_messages": _capture_messages,
 		"capture_errors": _capture_errors,
-		"logger_support_available": _logger_support_available
+		"logger_support_available": _logger_support_available,
+		"custom_logger_active": _custom_logger != null
 	}
 
 
@@ -299,7 +389,7 @@ func get_compatibility_info() -> Dictionary:
 	return {
 		"godot_version": Engine.get_version_info(),
 		"logger_support": _logger_support_available,
-		"interceptor_active": false,  # 一時的に無効
+		"interceptor_active": _logger_registered,
 		"system_capture_available": _logger_support_available,
 		"config_file_enabled": _config_file_enabled
 	}
@@ -339,17 +429,24 @@ func _setup_system_log_capture() -> void:
 		return
 
 	if _system_capture_enabled and not _logger_registered:
-		# TODO: 統合後にGodot Logger統合機能を再実装
+		_custom_logger.set_enabled(true)
+		_custom_logger.set_capture_errors(_capture_errors)
+		_custom_logger.set_capture_messages(_capture_messages)
+
+		# 重要: OS.add_logger()でGodotエンジンに登録
+		OS.add_logger(_custom_logger)
 		_logger_registered = true
+		print("SyncLogger: System log capture activated")
 
 
 func _cleanup_system_log_capture() -> void:
 	if not _logger_support_available:
 		return
 
-	if _logger_registered:
-		# TODO: 統合後にGodot Logger統合機能を再実装
+	if _custom_logger and _logger_registered:
+		OS.remove_logger(_custom_logger)
 		_logger_registered = false
+		print("SyncLogger: System log capture deactivated")
 
 
 # 終了処理

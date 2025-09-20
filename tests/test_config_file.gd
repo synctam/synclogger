@@ -3,8 +3,6 @@ class_name TestConfigFile
 
 # 設定ファイル機能のテスト
 
-const SyncLoggerMain = preload("res://addons/synclogger/synclogger.gd")
-
 var _sync_logger: SyncLoggerMain
 var _config_path: String
 

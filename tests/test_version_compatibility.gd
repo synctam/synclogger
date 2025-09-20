@@ -4,8 +4,6 @@ class_name TestVersionCompatibility
 # バージョン互換性テスト
 # Godot 4.0-4.4 と 4.5+ での動作確認
 
-const SyncLoggerMain = preload("res://addons/synclogger/synclogger.gd")
-
 var _sync_logger: SyncLoggerMain
 var _test_host: String = "127.0.0.1"
 var _test_port: int = 9999

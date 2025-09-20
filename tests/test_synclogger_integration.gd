@@ -3,8 +3,6 @@ class_name TestSyncLoggerIntegration
 
 # SyncLogger + Logger Interceptor統合テスト
 
-const SyncLoggerMain = preload("res://addons/synclogger/synclogger.gd")
-
 var _sync_logger: SyncLoggerMain
 var _test_host: String = "127.0.0.1"
 var _test_port: int = 9999

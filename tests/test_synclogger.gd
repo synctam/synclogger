@@ -1,6 +1,5 @@
 extends GutTest
 
-const SyncLoggerMain = preload("res://addons/synclogger/synclogger.gd")
 var synclogger: SyncLoggerMain
 
 
