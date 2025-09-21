@@ -1,6 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://b6dvkshymbr8w"]
-
-[ext_resource type="Script" path="res://demo_logger_integration.gd" id="1_8m3n4"]
-
-[node name="DemoLoggerIntegration" type="Node"]
-script = ExtResource("1_8m3n4")
