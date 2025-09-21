@@ -28,7 +28,7 @@ class SyncCustomLogger:
 		if not _sync_main or not _sync_main.has_method("_send_log"):
 			return
 
-		var level = "error" if error else "info"
+		var level: String = "error" if error else "info"
 		_sync_main._send_log(message, level, "godot_system", true)
 
 	func _log_error(
@@ -49,8 +49,8 @@ class SyncCustomLogger:
 			return
 
 		# エラー情報を構造化
-		var error_msg = "ERROR in %s:%d (%s): %s" % [file, line, function, rationale]
-		var error_level = _convert_error_type(error_type)
+		var error_msg: String = "ERROR in %s:%d (%s): %s" % [file, line, function, rationale]
+		var error_level: String = _convert_error_type(error_type)
 
 		_sync_main._send_log(error_msg, error_level, "godot_error", true)
 
@@ -113,7 +113,7 @@ var _custom_logger: SyncCustomLogger
 # 設定ファイル機能は新start/stop APIでは不要のため削除済み
 
 
-func _init():
+func _init() -> void:
 	# UDP送信オブジェクトは start() 時に作成
 	_check_logger_support()
 
@@ -129,13 +129,13 @@ func _init():
 		_custom_logger = SyncCustomLogger.new(self)
 
 
-func _ready():
+func _ready() -> void:
 	# 新start/stop APIでは設定ファイル自動読み込み不要
 	pass
 
 
 # Godot 4.5+ Logger機能の可用性チェック（統合版）
-func _check_logger_support():
+func _check_logger_support() -> void:
 	if ClassDB.class_exists("Logger"):
 		_logger_support_available = true
 	else:
@@ -253,7 +253,7 @@ func _send_log(message: String, level: String, category: String, is_system: bool
 		return false
 
 	# システムログの場合は特別なプレフィックスを追加
-	var processed_message = message
+	var processed_message: String = message
 	if is_system:
 		processed_message = "[SYSTEM] " + message
 
@@ -263,7 +263,7 @@ func _send_log(message: String, level: String, category: String, is_system: bool
 		processed_message = processed_message.left(MAX_MESSAGE_SIZE) + "...[truncated]"
 
 	# JSONコントロール文字問題修正: ANSIエスケープシーケンスを先に除去
-	var sanitized_message = _sanitize_message_for_json(processed_message)
+	var sanitized_message: String = _sanitize_message_for_json(processed_message)
 
 	# 改行処理問題修正: サニタイズ後にメッセージをクリーンアップ
 	sanitized_message = sanitized_message.strip_edges()
@@ -272,8 +272,8 @@ func _send_log(message: String, level: String, category: String, is_system: bool
 	if sanitized_message.is_empty() or sanitized_message.length() <= 2:
 		return false
 
-	var log_data = _create_log_data(sanitized_message, level, category)
-	var json_string = JSON.stringify(log_data)
+	var log_data: Dictionary = _create_log_data(sanitized_message, level, category)
+	var json_string: String = JSON.stringify(log_data)
 	return _udp_sender.send(json_string)
 
 
@@ -301,7 +301,7 @@ func is_sanitize_control_chars_enabled() -> bool:
 
 # JSONエンコード用メッセージサニタイズ
 func _sanitize_message_for_json(message: String) -> String:
-	var cleaned = message
+	var cleaned: String = message
 
 	# ANSI文字除去（設定可能）
 	if _sanitize_ansi:
@@ -316,13 +316,13 @@ func _sanitize_message_for_json(message: String) -> String:
 
 # ANSI エスケープシーケンス除去（最適化済み）
 func _remove_ansi_sequences(message: String) -> String:
-	var cleaned = message
+	var cleaned: String = message
 
 	# 効率的なANSI除去: RegExを1回だけ使用
 	cleaned = _ansi_regex.sub(cleaned, "", true)
 
 	# ESC文字の除去
-	var esc_char = char(0x1b)
+	var esc_char: String = char(0x1b)
 	cleaned = cleaned.replace(esc_char, "")
 
 	return cleaned
