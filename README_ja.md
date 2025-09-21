@@ -7,7 +7,7 @@ Godot Engine用のリアルタイムUDPログ送信アドオン - ゲームル�
 - 🚀 **ノンブロッキング**: ゲームパフォーマンスに影響せずUDP経由でログ送信
 - ⚡ **リアルタイム**: ライブデバッグのための即座のログ転送
 - 🎯 **シンプルAPI**: 使いやすいログインターフェース
-- 🔧 **設定可能**: JSONコンフィグファイルによる柔軟な設定
+- 🔧 **設定可能**: start/stop APIによる柔軟な設定
 - 🛡️ **安定性**: 包括的なテストカバレッジ（60+テスト）
 - 🎮 **ゲーム対応**: 自動フレーム番号・タイムスタンプ付与
 
@@ -80,15 +80,13 @@ sample_receiver.bat    # Windows
 - `critical(message: String, category: String = "general")` - criticalレベルログを送信
 - `trace(message: String, category: String = "general")` - traceレベルログを送信
 
-### 設定
+### セキュリティ機能
 ```gdscript
-# オプション: user://.synclogger.json のJSONコンフィグファイル
-{
-    "host": "127.0.0.1",
-    "port": 9999,
-    "system_capture": true,
-    "capture_errors": true
-}
+# 安全なstart/stop API - 明示的に開始するまでネットワーク通信なし
+SyncLogger.setup("127.0.0.1", 9999)  # 設定のみ（接続なし）
+SyncLogger.start()                    # 明示的なネットワーク開始
+# ... ログ処理 ...
+SyncLogger.stop()                     # 完全なネットワーク停止
 ```
 
 ## 📋 要件
@@ -120,8 +118,10 @@ sample_receiver.bat    # Windows
 
 **システムログキャプチャ（Godot 4.5+）**
 ```gdscript
-# 必要に応じてシステムキャプチャを無効化
-SyncLogger.set_system_capture_enabled(false)
+# システムキャプチャはstart()で自動有効化
+# 手動で無効にする場合：
+SyncLogger.set_capture_errors(false)
+SyncLogger.set_capture_messages(false)
 ```
 
 ## 🤝 開発

@@ -7,7 +7,7 @@ A real-time UDP logging addon for Godot Engine that sends logs over the network 
 - 🚀 **Non-blocking**: Logs sent via UDP without affecting game performance
 - ⚡ **Real-time**: Instant log transmission for live debugging
 - 🎯 **Simple API**: Easy-to-use logging interface
-- 🔧 **Configurable**: Flexible setup with JSON config files
+- 🔧 **Configurable**: Flexible setup with start/stop API
 - 🛡️ **Stable**: Comprehensive test coverage (60+ tests)
 - 🎮 **Game-ready**: Automatic frame numbers and timestamps
 
@@ -80,15 +80,13 @@ sample_receiver.bat    # Windows
 - `critical(message: String, category: String = "general")` - Send critical level log
 - `trace(message: String, category: String = "general")` - Send trace level log
 
-### Configuration
+### Security Features
 ```gdscript
-# Optional: JSON config file at user://.synclogger.json
-{
-    "host": "127.0.0.1",
-    "port": 9999,
-    "system_capture": true,
-    "capture_errors": true
-}
+# Secure start/stop API - no network communication until explicitly started
+SyncLogger.setup("127.0.0.1", 9999)  # Configuration only (no connection)
+SyncLogger.start()                    # Explicit network start
+# ... logging happens ...
+SyncLogger.stop()                     # Complete network shutdown
 ```
 
 ## 📋 Requirements
@@ -120,8 +118,10 @@ sample_receiver.bat    # Windows
 
 **System log capture (Godot 4.5+)**
 ```gdscript
-# Disable system capture if needed
-SyncLogger.set_system_capture_enabled(false)
+# System capture is automatically enabled with start()
+# To disable manually:
+SyncLogger.set_capture_errors(false)
+SyncLogger.set_capture_messages(false)
 ```
 
 ## 🤝 Development

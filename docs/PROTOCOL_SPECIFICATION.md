@@ -145,17 +145,16 @@ print("This message will be sent via UDP")
 push_error("This error will be captured")
 ```
 
-#### 4.3 設定ファイル（オプション）
+#### 4.3 セキュリティ制御（新start/stop API）
 
-`user://.synclogger.json`:
-```json
-{
-    "host": "192.168.1.100",
-    "port": 8888,
-    "system_capture": true,
-    "capture_errors": true,
-    "capture_messages": true
-}
+```gdscript
+# 安全なAPI設計 - 明示的制御が必要
+SyncLogger.setup("192.168.1.100", 8888)  # 設定のみ（接続なし）
+SyncLogger.start()                        # 明示的に開始が必要
+
+# システムキャプチャ制御（Godot 4.5+のみ）
+SyncLogger.set_capture_errors(true)
+SyncLogger.set_capture_messages(true)
 ```
 
 ### 5. サンプルレシーバー
