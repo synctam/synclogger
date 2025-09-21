@@ -86,7 +86,6 @@ class SyncCustomLogger:
 # 推奨パターン: SyncLogger.setup("127.0.0.1", 9999) → SyncLogger.log("message")
 
 # 定数定義
-const UDPSender = preload("res://addons/synclogger/udp_sender.gd")
 # 設定ファイル機能は新start/stop APIでは不要のため削除済み
 
 # 変数定義
