@@ -10,10 +10,10 @@ This is a **Godot SyncLogger addon** project currently in **planning phase**. Th
 
 ## Development Status
 
-**Current State**: リファクタリング完了（Phase 1-3 完了）
-**Phase 1完了**: MainThreadSimpleLoggerをSyncLoggerMainに統合、重複コード完全削除
-**Phase 2完了**: UDP接続管理最適化、再試行ロジック実装
-**Phase 3完了**: テスト構造統一、不要ファイル削除
+**Current State**: v1.0.0 正式版リリース完了
+**リリース完了**: SyncLogger v1.0.0 Production Ready
+**ブランチ最適化**: dev → release シンプルワークフロー採用
+**GitHub配布**: Release公開、AssetLibrary準備完了
 
 ## Architecture Overview
 
@@ -46,10 +46,10 @@ All features must follow Red-Green-Refactor cycle using **GUT (Godot Unit Test)*
 - **GDScript Formatter**: Code formatting
 
 ### Git Workflow
-- **dev branch**: 開発・テスト・ドキュメント管理（主）
-- **release branch**: 配布専用（従）
+- **dev branch**: 開発・統合・ドキュメント管理（メイン・デフォルト）
+- **release branch**: 配布専用（AssetLibrary向け軽量版）
 - **重要**: releaseブランチへの直接修正は禁止
-- **正しい流れ**: dev → release（一方向のみ）
+- **ワークフロー**: feature/* → dev → release（シンプル・一方向）
 - **Commit format**: Conventional Commits in Japanese (e.g., `feat(sender): UDP送信機能の基本を実装`)
 
 ## Implementation Roadmap
