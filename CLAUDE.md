@@ -46,9 +46,10 @@ All features must follow Red-Green-Refactor cycle using **GUT (Godot Unit Test)*
 - **GDScript Formatter**: Code formatting
 
 ### Git Workflow
-- **Main branch**: `main` (currently `master`) - release-ready code only
-- **Development**: `develop` branch - integration branch
-- **Features**: `feature/issue-name` branches from `develop`
+- **dev branch**: 開発・テスト・ドキュメント管理（主）
+- **release branch**: 配布専用（従）
+- **重要**: releaseブランチへの直接修正は禁止
+- **正しい流れ**: dev → release（一方向のみ）
 - **Commit format**: Conventional Commits in Japanese (e.g., `feat(sender): UDP送信機能の基本を実装`)
 
 ## Implementation Roadmap
