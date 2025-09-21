@@ -15,7 +15,7 @@ func before_each():
 
 func after_each():
 	if _sync_logger:
-		_sync_logger.shutdown()
+		_sync_logger.stop()
 	# add_child_autofreeが自動的に解放するのでqueue_freeは不要
 	_sync_logger = null
 
@@ -23,14 +23,16 @@ func after_each():
 func test_synclogger_with_interceptor_setup():
 	# テスト: SyncLoggerが Interceptor付きで正常にセットアップできること
 	_sync_logger.setup(_test_host, _test_port)
+	_sync_logger.start()
 
-	assert_true(_sync_logger.is_setup(), "SyncLoggerがセットアップされること")
+	assert_true(_sync_logger.is_running(), "SyncLoggerが開始されること")
 	assert_true(_sync_logger.is_system_capture_enabled(), "システムキャプチャがデフォルト有効であること")
 
 
 func test_system_log_capture_control():
 	# テスト: システムログキャプチャの制御
 	_sync_logger.setup(_test_host, _test_port)
+	_sync_logger.start()
 
 	# デフォルト状態確認
 	assert_true(_sync_logger.is_system_capture_enabled(), "デフォルトでシステムキャプチャ有効")
@@ -50,6 +52,7 @@ func test_system_log_capture_control():
 func test_selective_capture_control():
 	# テスト: 選択的キャプチャ制御
 	_sync_logger.setup(_test_host, _test_port)
+	_sync_logger.start()
 
 	# エラーのみ無効化
 	_sync_logger.set_capture_errors(false)
@@ -64,6 +67,7 @@ func test_selective_capture_control():
 func test_system_log_stats():
 	# テスト: システムログ統計情報の取得
 	_sync_logger.setup(_test_host, _test_port)
+	_sync_logger.start()
 
 	var stats = _sync_logger.get_system_log_stats()
 	assert_not_null(stats, "統計情報が取得できること")
@@ -82,6 +86,7 @@ func test_traditional_api_still_works():
 
 	_sync_logger._reset_config_state()
 	_sync_logger.setup(_test_host, _test_port)
+	_sync_logger.start()
 	_sync_logger.set_test_mode(true)  # テスト環境での接続エラー回避
 
 	# 従来のログメソッドが動作すること
@@ -94,10 +99,11 @@ func test_traditional_api_still_works():
 func test_interceptor_lifecycle():
 	# テスト: Interceptorのライフサイクル管理
 	_sync_logger.setup(_test_host, _test_port)
+	_sync_logger.start()
 
 	# セットアップ直後はシステムキャプチャが有効
 	assert_true(_sync_logger.is_system_capture_enabled(), "セットアップ直後はシステムキャプチャ有効")
 
 	# シャットダウンでクリーンアップされること
-	_sync_logger.shutdown()
-	assert_false(_sync_logger.is_setup(), "シャットダウン後はsetupが無効になること")
+	_sync_logger.stop()
+	assert_false(_sync_logger.is_running(), "シャットダウン後は実行が無効になること")

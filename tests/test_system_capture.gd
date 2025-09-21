@@ -13,7 +13,7 @@ func before_each():
 
 func after_each():
 	if synclogger:
-		synclogger.shutdown()
+		synclogger.stop()
 	synclogger = null
 
 
@@ -26,6 +26,7 @@ func test_system_capture_availability():
 func test_can_enable_system_capture():
 	"""システムログキャプチャ有効化テスト"""
 	synclogger.setup("127.0.0.1", 9999)
+	synclogger.start()
 
 	var result = synclogger.enable_system_capture()
 	if synclogger._logger_support_available:
@@ -38,6 +39,7 @@ func test_can_enable_system_capture():
 func test_can_control_capture_messages():
 	"""メッセージキャプチャ制御テスト"""
 	synclogger.setup("127.0.0.1", 9999)
+	synclogger.start()
 
 	# メッセージキャプチャを無効化
 	synclogger.set_capture_messages(false)
@@ -57,6 +59,7 @@ func test_can_control_capture_messages():
 func test_can_control_capture_errors():
 	"""エラーキャプチャ制御テスト"""
 	synclogger.setup("127.0.0.1", 9999)
+	synclogger.start()
 
 	# エラーキャプチャを無効化
 	synclogger.set_capture_errors(false)
@@ -76,6 +79,7 @@ func test_can_control_capture_errors():
 func test_system_log_stats_format():
 	"""システムログ統計情報の形式テスト"""
 	synclogger.setup("127.0.0.1", 9999)
+	synclogger.start()
 
 	var stats = synclogger.get_system_log_stats()
 
@@ -100,6 +104,7 @@ func test_compatibility_info_includes_interceptor():
 func test_custom_logger_lifecycle():
 	"""カスタムLoggerのライフサイクルテスト"""
 	synclogger.setup("127.0.0.1", 9999)
+	synclogger.start()
 
 	if synclogger._logger_support_available:
 		# カスタムLoggerが作成されていることを確認
@@ -107,5 +112,5 @@ func test_custom_logger_lifecycle():
 		assert_true(stats.custom_logger_active, "カスタムLoggerが活性化されている")
 
 		# シャットダウン時に適切にクリーンアップされることを確認
-		synclogger.shutdown()
+		synclogger.stop()
 		# 注意: シャットダウン後の状態は実装次第

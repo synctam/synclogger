@@ -17,7 +17,7 @@ func before_each():
 
 func after_each():
 	if _sync_logger:
-		_sync_logger.shutdown()
+		_sync_logger.stop()
 	# テスト後のクリーンアップ
 	if FileAccess.file_exists(_config_path):
 		DirAccess.remove_absolute(_config_path)

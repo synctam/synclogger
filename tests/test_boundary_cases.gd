@@ -11,7 +11,7 @@ func before_each():
 
 func after_each():
 	if synclogger:
-		synclogger.shutdown()
+		synclogger.stop()
 	# add_child_autofreeが自動的に解放するのでqueue_freeは不要
 	synclogger = null
 
@@ -19,6 +19,7 @@ func after_each():
 func test_message_size_limit_4096_bytes():
 	"""メッセージサイズ制限4096バイトのテスト"""
 	synclogger.setup("127.0.0.1", 9999)
+	synclogger.start()
 
 	# 4096バイト（境界値）のメッセージ
 	var message_4096 = "A".repeat(4096)
@@ -36,6 +37,7 @@ func test_convert_error_type_all_patterns():
 	# プライベートメソッドのテストは難しいため、
 	# システムログキャプチャを通じて間接的にテスト
 	synclogger.setup("127.0.0.1", 9999)
+	synclogger.start()
 	var capture_enabled = synclogger.enable_system_capture()
 	assert_true(capture_enabled, "システムキャプチャが有効化される")
 
@@ -48,6 +50,7 @@ func test_convert_error_type_all_patterns():
 func test_sanitize_ansi_sequences():
 	"""ANSIエスケープシーケンス除去テスト"""
 	synclogger.setup("127.0.0.1", 9999)
+	synclogger.start()
 
 	# ANSIエスケープシーケンスを含むメッセージ
 	var ansi_message = "\u001b[31mRed Text\u001b[0m with \u001b[1mbold\u001b[0m"
@@ -63,6 +66,7 @@ func test_sanitize_ansi_sequences():
 func test_empty_and_short_message_handling():
 	"""空・短メッセージ処理テスト"""
 	synclogger.setup("127.0.0.1", 9999)
+	synclogger.start()
 
 	# 空メッセージは送信されない（セキュリティ対策）
 	var empty_result = synclogger.info("")

@@ -30,14 +30,18 @@ Godot Engine用のリアルタイムUDPログ送信アドオン - ゲームル�
 ```gdscript
 # セットアップ（通常は_ready()内）
 SyncLogger.setup("127.0.0.1", 9999)
+SyncLogger.start()  # ログ開始
 
 # ログ送信
 SyncLogger.info("プレイヤーがスポーン")
 SyncLogger.warning("体力低下: %d" % health)
 SyncLogger.error("接続失敗")
 
-# クリーンアップ（通常は_exit_tree()内）
-await SyncLogger.shutdown()
+# ログ停止（通常は_exit_tree()内）
+SyncLogger.stop()
+
+# オプション: ログ再開
+SyncLogger.restart()
 ```
 
 ### ログレシーバー
@@ -65,13 +69,16 @@ sample_receiver.bat    # Windows
 ## 📚 API リファレンス
 
 ### コアメソッド
-- `setup(host: String, port: int)` - UDP接続を初期化
-- `info(message: String)` - infoレベルログを送信
-- `debug(message: String)` - debugレベルログを送信
-- `warning(message: String)` - warningレベルログを送信
-- `error(message: String)` - errorレベルログを送信
-- `critical(message: String)` - criticalレベルログを送信
-- `shutdown()` - クリーンシャットダウン（awaitableを返す）
+- `setup(host: String = "127.0.0.1", port: int = 9999)` - 接続設定を構成（接続はしない）
+- `start()` - UDP接続を開始しログを有効化
+- `stop()` - UDP接続を停止しログを無効化
+- `restart()` - 接続を再起動（stop + start）
+- `info(message: String, category: String = "general")` - infoレベルログを送信
+- `debug(message: String, category: String = "general")` - debugレベルログを送信
+- `warning(message: String, category: String = "general")` - warningレベルログを送信
+- `error(message: String, category: String = "general")` - errorレベルログを送信
+- `critical(message: String, category: String = "general")` - criticalレベルログを送信
+- `trace(message: String, category: String = "general")` - traceレベルログを送信
 
 ### 設定
 ```gdscript

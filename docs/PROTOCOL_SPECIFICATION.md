@@ -47,17 +47,26 @@ SyncLoggerは単一の統合実装を採用：
 #### 2.2 接続手順
 
 ```gdscript
-# setup時の初期化
+# setup時（設定のみ）
+1. _host = host
+2. _port = port
+# 接続はまだ確立しない
+
+# start時の接続確立
 1. _udp_socket = PacketPeerUDP.new()
-2. _udp_socket.connect_to_host(host, port)  # 永続接続確立
+2. _udp_socket.connect_to_host(_host, _port)  # 永続接続確立
+3. _is_running = true
 
 # 送信時の処理フロー
-1. _ensure_connection()             # 接続確認・再接続
-2. _udp_socket.put_packet(data)     # データ送信
-3. 送信失敗時は自動再試行（最大1回）
+1. if not _is_running: return      # 実行中チェック
+2. _ensure_connection()             # 接続確認・再接続
+3. _udp_socket.put_packet(data)     # データ送信
+4. 送信失敗時は自動再試行（最大1回）
 
-# shutdown時のクリーンアップ
+# stop時のクリーンアップ
 1. _udp_socket.close()              # 接続クローズ
+2. _udp_socket = null
+3. _is_running = false
 ```
 
 ### 3. データフォーマット
@@ -106,6 +115,7 @@ SyncLoggerは単一の統合実装を採用：
 ```gdscript
 # セットアップ（通常は_ready()内）
 SyncLogger.setup("127.0.0.1", 9999)
+SyncLogger.start()  # ログ送信開始
 
 # ログ送信（優先度順）
 SyncLogger.trace("Function entered: process_input()")
@@ -116,7 +126,10 @@ SyncLogger.error("Failed to load texture: player.png")
 SyncLogger.critical("Out of memory - game will crash")
 
 # クリーンアップ（通常は_exit_tree()内）
-await SyncLogger.shutdown()
+SyncLogger.stop()
+
+# オプション: ログ再開
+SyncLogger.restart()
 ```
 
 #### 4.2 システムログキャプチャ（Godot 4.5+）

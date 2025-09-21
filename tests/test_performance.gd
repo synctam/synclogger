@@ -41,7 +41,7 @@ func test_memory_leak_on_long_run():
 		if i % 100 == 0:
 			await get_tree().process_frame
 
-	await logger.shutdown()
+	await logger.stop()
 	await get_tree().process_frame
 
 	var final_memory = OS.get_static_memory_usage()

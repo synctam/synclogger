@@ -16,7 +16,7 @@ func before_each():
 
 func after_each():
 	if _sync_logger:
-		_sync_logger.shutdown()
+		_sync_logger.stop()
 	# add_child_autofreeが自動的に解放するのでqueue_freeは不要
 	_sync_logger = null
 

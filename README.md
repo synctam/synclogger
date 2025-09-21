@@ -30,14 +30,18 @@ A real-time UDP logging addon for Godot Engine that sends logs over the network 
 ```gdscript
 # Setup (usually in _ready())
 SyncLogger.setup("127.0.0.1", 9999)
+SyncLogger.start()  # Start logging
 
 # Send logs
 SyncLogger.info("Player spawned")
 SyncLogger.warning("Low health: %d" % health)
 SyncLogger.error("Connection failed")
 
-# Cleanup (usually in _exit_tree())
-await SyncLogger.shutdown()
+# Stop logging (usually in _exit_tree())
+SyncLogger.stop()
+
+# Optional: Restart logging
+SyncLogger.restart()
 ```
 
 ### Log Receiver
@@ -65,13 +69,16 @@ sample_receiver.bat    # Windows
 ## 📚 API Reference
 
 ### Core Methods
-- `setup(host: String, port: int)` - Initialize UDP connection
-- `info(message: String)` - Send info level log
-- `debug(message: String)` - Send debug level log
-- `warning(message: String)` - Send warning level log
-- `error(message: String)` - Send error level log
-- `critical(message: String)` - Send critical level log
-- `shutdown()` - Clean shutdown (returns awaitable)
+- `setup(host: String = "127.0.0.1", port: int = 9999)` - Configure connection settings (no connection made)
+- `start()` - Start UDP connection and enable logging
+- `stop()` - Stop UDP connection and disable logging
+- `restart()` - Restart connection (stop + start)
+- `info(message: String, category: String = "general")` - Send info level log
+- `debug(message: String, category: String = "general")` - Send debug level log
+- `warning(message: String, category: String = "general")` - Send warning level log
+- `error(message: String, category: String = "general")` - Send error level log
+- `critical(message: String, category: String = "general")` - Send critical level log
+- `trace(message: String, category: String = "general")` - Send trace level log
 
 ### Configuration
 ```gdscript

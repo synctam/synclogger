@@ -11,7 +11,7 @@ func before_each():
 
 func after_each():
 	if synclogger:
-		synclogger.shutdown()
+		synclogger.stop()
 	# add_child_autofreeが自動的に解放するのでqueue_freeは不要
 	synclogger = null
 
@@ -25,18 +25,21 @@ func test_can_setup_host_and_port():
 	var port = 9999
 
 	synclogger.setup(host, port)
+	synclogger.start()
 
 	assert_eq(synclogger.get_host(), host, "ホストが正しく設定される")
 	assert_eq(synclogger.get_port(), port, "ポートが正しく設定される")
 
 
-func test_setup_enables_logging():
+func test_start_enables_logging():
 	synclogger.setup("127.0.0.1", 9999)
-	assert_true(synclogger.is_setup(), "セットアップ後にログが有効になる")
+	synclogger.start()
+	assert_true(synclogger.is_running(), "開始後にログが有効になる")
 
 
 func test_log_creates_correct_data():
 	synclogger.setup("127.0.0.1", 9999)
+	synclogger.start()
 
 	var log_data = synclogger._create_log_data("test message", "info", "general")
 
@@ -49,6 +52,7 @@ func test_log_creates_correct_data():
 
 func test_all_log_levels():
 	synclogger.setup("127.0.0.1", 9999)
+	synclogger.start()
 
 	# 全6レベルが動作することを確認
 	var trace_result = synclogger.trace("trace message")
@@ -74,6 +78,7 @@ func test_log_without_setup_returns_false():
 
 func test_critical_and_trace_log_levels():
 	synclogger.setup("127.0.0.1", 9999)
+	synclogger.start()
 
 	# criticalレベルのテスト
 	var critical_data = synclogger._create_log_data("critical test", "critical", "test")
@@ -84,17 +89,19 @@ func test_critical_and_trace_log_levels():
 	assert_eq(trace_data.level, "trace", "traceレベルが正しく設定される")
 
 
-func test_shutdown_disables_logging():
+func test_stop_disables_logging():
 	synclogger.setup("127.0.0.1", 9999)
-	assert_true(synclogger.is_setup(), "セットアップ後はログが有効")
+	synclogger.start()
+	assert_true(synclogger.is_running(), "開始後はログが有効")
 
-	synclogger.shutdown()
-	assert_false(synclogger.is_setup(), "shutdown後はログが無効")
+	synclogger.stop()
+	assert_false(synclogger.is_running(), "stop後はログが無効")
 
 
 func test_compatibility_methods():
 	# 互換性メソッドのテスト
 	synclogger.setup("127.0.0.1", 9999)
+	synclogger.start()
 
 	assert_true(synclogger.is_running(), "is_running()はsetup後にtrueを返す")
 	assert_eq(synclogger.get_queue_size(), 0, "get_queue_size()は常に0を返す（キューレス実装）")

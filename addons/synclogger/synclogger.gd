@@ -89,7 +89,10 @@ const DEFAULT_CONFIG = {
 }
 
 # 変数定義
-var _udp_sender: UDPSender
+var _host: String = "127.0.0.1"  # デフォルトホスト
+var _port: int = 9999  # デフォルトポート
+var _is_running: bool = false  # 実行状態フラグ
+var _udp_sender: UDPSender = null  # UDP送信オブジェクト
 
 # サニタイズ設定
 var _sanitize_ansi: bool = true  # デフォルト: ANSI文字を除去
@@ -112,7 +115,7 @@ var _config_file_enabled: bool = false
 
 
 func _init():
-	_udp_sender = UDPSender.new()
+	# UDP送信オブジェクトは start() 時に作成
 	_check_logger_support()
 
 	# RegEx初期化（パフォーマンス最適化）
@@ -139,29 +142,61 @@ func _check_logger_support():
 		_logger_support_available = false
 
 
-func setup(host: String, port: int) -> void:
-	# 直接実装: UDPSenderを使用
-	_udp_sender.setup(host, port)
+func setup(host: String = "127.0.0.1", port: int = 9999) -> void:
+	# 設定のみ更新（UDP接続はしない）
+	_host = host
+	_port = port
 
 	# サニタイズ設定を確実に有効化（ANSI・制御文字除去）
 	_sanitize_ansi = true
 	_sanitize_control_chars = true
+
+
+func start() -> void:
+	if _is_running:
+		# 既に実行中の場合は何もしない（サイレント）
+		return
+
+	# UDP接続を確立
+	_udp_sender = UDPSender.new()
+	_udp_sender.setup(_host, _port)
+	_is_running = true
 
 	# システムログキャプチャを自動設定（Godot 4.5+のみ）
 	if _logger_support_available:
 		_setup_system_log_capture()
 
 
+func stop() -> void:
+	if not _is_running:
+		return
+
+	# UDP接続を切断
+	if _udp_sender:
+		_udp_sender.close()
+		_udp_sender = null
+	_is_running = false
+
+	# システムログキャプチャを無効化
+	_cleanup_system_log_capture()
+
+
+func restart() -> void:
+	stop()
+	start()
+
+
 func get_host() -> String:
-	return _udp_sender.get_host() if _udp_sender != null else ""
+	return _host
 
 
 func get_port() -> int:
-	return _udp_sender.get_port() if _udp_sender != null else 0
+	return _port
 
 
 func is_setup() -> bool:
-	return _udp_sender != null and _udp_sender.is_setup()
+	# 設定がデフォルト以外に設定されているかを確認
+	return _host != "" and _port > 0
 
 
 func set_test_mode(enabled: bool) -> void:
@@ -170,9 +205,9 @@ func set_test_mode(enabled: bool) -> void:
 		_udp_sender.set_test_mode(enabled)
 
 
-# 互換性API（統合・簡素化）
+# 実行状態の確認
 func is_running() -> bool:
-	return _udp_sender != null and _udp_sender.is_setup()
+	return _is_running
 
 
 func get_queue_size() -> int:
@@ -425,13 +460,6 @@ func _cleanup_system_log_capture() -> void:
 	if _custom_logger and _logger_registered:
 		OS.remove_logger(_custom_logger)
 		_logger_registered = false
-
-
-# 終了処理
-func shutdown() -> void:
-	_cleanup_system_log_capture()
-	if _udp_sender:
-		_udp_sender.close()
 
 
 # 任意機能: 設定ファイル自動読み込み
