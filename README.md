@@ -9,7 +9,7 @@ A real-time UDP logging addon for Godot Engine that sends logs over the network 
 - 🎯 **Simple API**: Easy-to-use logging interface
 - 🔧 **Configurable**: Flexible setup with start/stop API
 - 🛡️ **Stable**: Comprehensive test coverage (60+ tests)
-- 🎮 **Game-ready**: Automatic frame numbers and timestamps
+- 🎮 **Game-ready**: Automatic frame tracking with process & physics frame numbers
 
 ## 📦 Installation
 
@@ -88,6 +88,26 @@ SyncLogger.start()                    # Explicit network start
 # ... logging happens ...
 SyncLogger.stop()                     # Complete network shutdown
 ```
+
+### Frame Information
+Every log automatically includes precise frame tracking for game debugging:
+
+```json
+{
+  "timestamp": 1722556800.123,
+  "frame": 12345,           // Process frame number
+  "physics_frame": 6789,    // Physics frame number
+  "level": "info",
+  "category": "gameplay",
+  "message": "Player spawned"
+}
+```
+
+**Benefits for Game Development:**
+- 🎯 **Frame-perfect debugging**: Correlate logs with specific game frames
+- ⏱️ **Performance analysis**: Track frame timing issues
+- 🔍 **Physics debugging**: Separate process and physics frame tracking
+- 📊 **Timeline reconstruction**: Rebuild exact game state progression
 
 ## 📋 Requirements
 
