@@ -102,6 +102,15 @@ func _ensure_connection() -> bool:
 	return _is_connected
 
 
-func _retry_send(data: String) -> bool:
+func _retry_send(data: String, retry_count: int = 0) -> bool:
 	"""送信失敗時の再試行ロジック"""
-	return _ensure_connection() and send(data)
+	const MAX_RETRIES = 1
+	if retry_count >= MAX_RETRIES:
+		return false
+
+	if not _ensure_connection():
+		return false
+
+	var bytes = data.to_utf8_buffer()
+	var result = _udp_socket.put_packet(bytes)
+	return result == OK

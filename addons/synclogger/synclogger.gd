@@ -7,6 +7,10 @@ extends Node
 class SyncCustomLogger:
 	extends Logger
 
+	# ローカル定数（Logger定数との競合回避）
+	const LOCAL_ERROR_TYPE_WARNING = 1
+	const LOCAL_ERROR_TYPE_ERROR = 0
+
 	var _sync_main: SyncLoggerNode
 	var _enabled: bool = true
 	var _capture_messages: bool = true
@@ -44,10 +48,11 @@ class SyncCustomLogger:
 
 	# エラータイプをログレベルに変換
 	func _convert_error_type(error_type: int) -> String:
-		# Note: Logger.ERROR_TYPE_* 定数が利用可能かチェック必要
-		if error_type == 1:  # WARNING相当
-			return "warning"
-		return "error"
+		match error_type:
+			LOCAL_ERROR_TYPE_WARNING:
+				return "warning"
+			_:
+				return "error"
 
 	# 制御メソッド
 	func set_enabled(enabled: bool) -> void:
@@ -130,10 +135,8 @@ func _ready():
 func _check_logger_support():
 	if ClassDB.class_exists("Logger"):
 		_logger_support_available = true
-		# Godot 4.5+ Logger integration enabled
 	else:
 		_logger_support_available = false
-		# Running in compatibility mode (Godot 4.0-4.4)
 
 
 func setup(host: String, port: int) -> void:
@@ -413,7 +416,6 @@ func _setup_system_log_capture() -> void:
 		# 重要: OS.add_logger()でGodotエンジンに登録
 		OS.add_logger(_custom_logger)
 		_logger_registered = true
-		# System log capture activated
 
 
 func _cleanup_system_log_capture() -> void:
@@ -423,7 +425,6 @@ func _cleanup_system_log_capture() -> void:
 	if _custom_logger and _logger_registered:
 		OS.remove_logger(_custom_logger)
 		_logger_registered = false
-		# System log capture deactivated
 
 
 # 終了処理
@@ -440,11 +441,8 @@ func _try_load_config_file() -> void:
 		var config = _load_simple_config(config_path)
 		_setup_from_config(config)
 		_config_file_enabled = true
-		# Config loaded and merged with defaults
 	else:
 		_config_file_enabled = false
-		# Disabled (no config file)
-
 
 func _load_simple_config(path: String) -> Dictionary:
 	var file = FileAccess.open(path, FileAccess.READ)
@@ -456,14 +454,12 @@ func _load_simple_config(path: String) -> Dictionary:
 
 	if content.is_empty():
 		_write_default_config(path)
-		# Empty config file, created default config
 		return DEFAULT_CONFIG.duplicate()
 
 	var json = JSON.new()
 	var parse_result = json.parse(content)
 
 	if parse_result != OK or not json.data is Dictionary:
-		# Invalid JSON detected, overwriting with defaults
 		_write_default_config(path)
 		return DEFAULT_CONFIG.duplicate()
 
@@ -479,8 +475,7 @@ func _load_simple_config(path: String) -> Dictionary:
 func _write_default_config(path: String) -> void:
 	var file = FileAccess.open(path, FileAccess.WRITE)
 	if not file:
-		# Cannot write config file (permission error)
-		return
+			return
 
 	# コメント付きJSONで書き込み
 	var default_content = """{
@@ -494,7 +489,6 @@ func _write_default_config(path: String) -> void:
 
 	file.store_string(default_content)
 	file.close()
-	# Default config file created
 
 
 func _setup_from_config(config: Dictionary) -> void:
