@@ -50,6 +50,7 @@ func test_basic_functionality_always_works():
 
 	_sync_logger._reset_config_state()
 	_sync_logger.setup(_test_host, _test_port)
+	_sync_logger.start()
 	_sync_logger.set_test_mode(true)  # テスト環境での接続エラー回避
 
 	# 基本ログ機能（全バージョンで動作）
@@ -61,6 +62,7 @@ func test_basic_functionality_always_works():
 func test_system_capture_behavior_based_on_version():
 	# テスト: システムキャプチャのバージョン別動作
 	_sync_logger.setup(_test_host, _test_port)
+	_sync_logger.start()
 
 	var logger_support = _sync_logger.is_logger_integration_available()
 
@@ -88,6 +90,7 @@ func test_system_capture_behavior_based_on_version():
 func test_error_message_capture_based_on_version():
 	# テスト: エラーキャプチャのバージョン別動作
 	_sync_logger.setup(_test_host, _test_port)
+	_sync_logger.start()
 
 	var logger_support = _sync_logger.is_logger_integration_available()
 
@@ -112,6 +115,7 @@ func test_graceful_degradation():
 
 	_sync_logger._reset_config_state()
 	_sync_logger.setup(_test_host, _test_port)
+	_sync_logger.start()
 
 	# 新機能APIの呼び出し（例外が発生しないこと）
 	_sync_logger.enable_system_capture()
