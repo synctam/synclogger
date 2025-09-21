@@ -42,17 +42,35 @@ SyncLogger.error("Connection failed")
 await SyncLogger.shutdown()
 ```
 
-### Log Receiver (Python)
-```python
-import socket
+### Log Receiver
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.bind(("127.0.0.1", 9999))
+**🚀 Quick Start (Recommended)**
+```bash
+# Windows
+start_receiver.bat
 
-while True:
-    data, addr = sock.recvfrom(4096)
-    print(data.decode('utf-8'))
+# Linux/macOS
+./start_receiver.sh
 ```
+
+**⚙️ Advanced Usage**
+```bash
+# Basic usage
+python log_receiver.py
+
+# With timestamp and file saving
+python log_receiver.py --timestamp --save logs.txt
+
+# Custom host/port
+python log_receiver.py --host 192.168.1.100 --port 8888
+```
+
+**📋 Features**
+- ✨ **Color-coded logs** by level (trace, debug, info, warning, error, critical)
+- ⏰ **Timestamp display** with millisecond precision
+- 💾 **File saving** with automatic ANSI code cleanup
+- 🎯 **JSON parsing** with structured log display
+- 🛡️ **Error handling** for malformed messages
 
 ## 📚 API Reference
 
