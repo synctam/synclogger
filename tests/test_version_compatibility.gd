@@ -42,13 +42,6 @@ func test_compatibility_info():
 
 func test_basic_functionality_always_works():
 	# テスト: 基本機能は常に動作すること
-	# テスト用設定ファイルを作成
-	var config_path = _sync_logger.get_config_file_path()
-	var file = FileAccess.open(config_path, FileAccess.WRITE)
-	file.store_string("{}")
-	file.close()
-
-	_sync_logger._reset_config_state()
 	_sync_logger.setup(_test_host, _test_port)
 	_sync_logger.start()
 	_sync_logger.set_test_mode(true)  # テスト環境での接続エラー回避
@@ -107,13 +100,6 @@ func test_error_message_capture_based_on_version():
 
 func test_graceful_degradation():
 	# テスト: グレースフルデグラデーション（機能劣化の適切な処理）
-	# テスト用設定ファイルを作成
-	var config_path = _sync_logger.get_config_file_path()
-	var file = FileAccess.open(config_path, FileAccess.WRITE)
-	file.store_string("{}")
-	file.close()
-
-	_sync_logger._reset_config_state()
 	_sync_logger.setup(_test_host, _test_port)
 	_sync_logger.start()
 

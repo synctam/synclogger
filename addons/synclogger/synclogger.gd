@@ -87,14 +87,7 @@ class SyncCustomLogger:
 
 # 定数定義
 const UDPSender = preload("res://addons/synclogger/udp_sender.gd")
-const CONFIG_FILENAME = ".synclogger.json"
-const DEFAULT_CONFIG = {
-	"host": "127.0.0.1",
-	"port": 9999,
-	"system_capture": true,
-	"capture_errors": true,
-	"capture_messages": true
-}
+# 設定ファイル機能は新start/stop APIでは不要のため削除済み
 
 # 変数定義
 var _host: String = "127.0.0.1"  # デフォルトホスト
@@ -118,8 +111,7 @@ var _logger_registered: bool = false
 var _logger_support_available: bool = false
 var _custom_logger: SyncCustomLogger
 
-# 設定ファイル機能
-var _config_file_enabled: bool = false
+# 設定ファイル機能は新start/stop APIでは不要のため削除済み
 
 
 func _init():
@@ -139,7 +131,8 @@ func _init():
 
 
 func _ready():
-	_try_load_config_file()
+	# 新start/stop APIでは設定ファイル自動読み込み不要
+	pass
 
 
 # Godot 4.5+ Logger機能の可用性チェック（統合版）
@@ -418,32 +411,11 @@ func get_compatibility_info() -> Dictionary:
 		"logger_support": _logger_support_available,
 		"interceptor_active": _logger_registered,
 		"system_capture_available": _logger_support_available,
-		"config_file_enabled": _config_file_enabled
+		"config_file_enabled": false
 	}
 
 
-# 任意機能: 設定ファイル機能
-func load_config_file() -> bool:
-	"""Manual config file loading (optional)"""
-	_try_load_config_file()
-	return _config_file_enabled
-
-
-func is_config_file_enabled() -> bool:
-	return _config_file_enabled
-
-
-func get_config_file_path() -> String:
-	return "user://" + CONFIG_FILENAME
-
-
-# テスト用の状態リセット機能
-func _reset_config_state() -> void:
-	"""テスト用: 設定ファイル状態をリセットして再読み込み"""
-	_config_file_enabled = false
-	if _udp_sender:
-		_udp_sender.close()
-	_try_load_config_file()
+# 設定ファイル機能は新start/stop APIでは不要のため削除済み
 
 
 # 内部実装（Godot 4.5+のみ）- 統合版
@@ -470,74 +442,9 @@ func _cleanup_system_log_capture() -> void:
 		_logger_registered = false
 
 
-# 任意機能: 設定ファイル自動読み込み
-func _try_load_config_file() -> void:
-	var config_path = "user://" + CONFIG_FILENAME
-	if FileAccess.file_exists(config_path):
-		var config = _load_simple_config(config_path)
-		_setup_from_config(config)
-		_config_file_enabled = true
-	else:
-		_config_file_enabled = false
-
-func _load_simple_config(path: String) -> Dictionary:
-	var file = FileAccess.open(path, FileAccess.READ)
-	if not file:
-		return DEFAULT_CONFIG.duplicate()
-
-	var content = file.get_as_text().strip_edges()
-	file.close()
-
-	if content.is_empty():
-		_write_default_config(path)
-		return DEFAULT_CONFIG.duplicate()
-
-	var json = JSON.new()
-	var parse_result = json.parse(content)
-
-	if parse_result != OK or not json.data is Dictionary:
-		_write_default_config(path)
-		return DEFAULT_CONFIG.duplicate()
-
-	# デフォルト値とマージ
-	var final_config = DEFAULT_CONFIG.duplicate()
-	for key in json.data:
-		if final_config.has(key):
-			final_config[key] = json.data[key]
-
-	return final_config
+# 設定ファイル機能は新start/stop APIでは不要のため削除済み
 
 
-func _write_default_config(path: String) -> void:
-	var file = FileAccess.open(path, FileAccess.WRITE)
-	if not file:
-			return
-
-	# コメント付きJSONで書き込み
-	var default_content = """{
-	"_comment": "SyncLogger Configuration - Edit as needed",
-	"host": "127.0.0.1",
-	"port": 9999,
-	"system_capture": true,
-	"capture_errors": true,
-	"capture_messages": true
-}"""
-
-	file.store_string(default_content)
-	file.close()
 
 
-func _setup_from_config(config: Dictionary) -> void:
-	# 基本設定
-	setup(config.get("host", "127.0.0.1"), config.get("port", 9999))
 
-	# システムキャプチャ設定（Godot 4.5+のみ）
-	if _logger_support_available:
-		if config.has("system_capture"):
-			_system_capture_enabled = config.system_capture
-			if config.system_capture:
-				enable_system_capture()
-		if config.has("capture_errors"):
-			set_capture_errors(config.capture_errors)
-		if config.has("capture_messages"):
-			set_capture_messages(config.capture_messages)
