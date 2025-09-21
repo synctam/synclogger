@@ -1,0 +1,10 @@
+[18:08:03.118070] [INFO    ] [godot_system] [SYSTEM] === SyncLogger レシーバーテスト ===
+[18:08:03.118150] [INFO    ] [godot_system] [SYSTEM] SyncLogger found as AutoLoad
+[18:08:03.118200] [INFO    ] [godot_system] [SYSTEM] Setup completed: 127.0.0.1:9999
+[18:08:03.118220] [INFO    ] [general] テストメッセージ1: 基本ログ
+[18:08:03.118230] [WARNING ] [general] テストメッセージ2: 警告ログ
+[18:08:03.118230] [ERROR   ] [general] テストメッセージ3: エラーログ
+[18:08:03.118240] [DEBUG   ] [general] テストメッセージ4: デバッグログ
+[18:08:03.118250] [CRITICAL] [general] テストメッセージ5: 重要ログ
+[18:08:03.118270] [INFO    ] [godot_system] [SYSTEM] 5個のテストメッセージを送信しました
+[18:08:04.045970] [INFO    ] [godot_system] (F:134/P:60) [SYSTEM] テスト完了
