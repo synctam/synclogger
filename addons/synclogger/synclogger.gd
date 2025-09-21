@@ -24,6 +24,10 @@ class SyncCustomLogger:
 		if not _enabled or not _capture_messages:
 			return
 
+		# 安全性チェック: _sync_mainが有効かつ_send_logメソッドが存在するか
+		if not _sync_main or not _sync_main.has_method("_send_log"):
+			return
+
 		var level = "error" if error else "info"
 		_sync_main._send_log(message, level, "godot_system", true)
 
@@ -38,6 +42,10 @@ class SyncCustomLogger:
 		_script_backtraces: Array
 	) -> void:
 		if not _enabled or not _capture_errors:
+			return
+
+		# 安全性チェック: _sync_mainが有効かつ_send_logメソッドが存在するか
+		if not _sync_main or not _sync_main.has_method("_send_log"):
 			return
 
 		# エラー情報を構造化
