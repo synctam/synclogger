@@ -1,11 +1,26 @@
 #!/usr/bin/env python3
 """
-SyncLogger UDP Log Receiver
-Godot SyncLogger用の高機能ログレシーバー
+SyncLogger UDP Log Receiver (Sample)
+Godot SyncLogger用のサンプルレシーバー
+※ このファイルはサンプル実装です。必要に応じてカスタマイズしてください。
 
-使用方法:
-    python log_receiver.py --port 9999 --host 127.0.0.1
-    python log_receiver.py --save logs.txt --timestamp
+■ 基本的な使い方:
+    python sample_receiver.py                          # デフォルト(127.0.0.1:9999)
+    python sample_receiver.py --timestamp              # タイムスタンプ表示
+    python sample_receiver.py --save logs.txt          # ファイル保存
+    python sample_receiver.py --timestamp --save logs.txt  # 両方
+
+■ カスタマイズ:
+    python sample_receiver.py --host 192.168.1.100 --port 8888  # IP/ポート変更
+    python sample_receiver.py --no-color               # カラー表示無効
+
+■ Windows簡単起動（バッチファイル作成推奨）:
+    @echo off
+    python sample_receiver.py --timestamp --save logs.txt
+    pause
+
+■ 停止方法:
+    Ctrl+C
 """
 
 import socket
@@ -80,7 +95,7 @@ class LogReceiver:
             if timestamp and self.show_timestamp:
                 if isinstance(timestamp, (int, float)):
                     dt = datetime.fromtimestamp(timestamp)
-                    time_str = dt.strftime('%H:%M:%S.%f')[:-3]  # ミリ秒まで
+                    time_str = dt.strftime('%H:%M:%S.%f')  # マイクロ秒まで
                 else:
                     time_str = str(timestamp)
                 time_prefix = f"[{time_str}] "

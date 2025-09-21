@@ -2,8 +2,6 @@
 
 A real-time UDP logging addon for Godot Engine that sends logs over the network without blocking the main game loop.
 
-リアルタイムUDPログ送信アドオン - ゲームループをブロックせずにネットワーク経由でログを送信
-
 ## ✨ Features
 
 - 🚀 **Non-blocking**: Logs sent via UDP without affecting game performance
@@ -44,30 +42,22 @@ await SyncLogger.shutdown()
 
 ### Log Receiver
 
-**🚀 Quick Start (Recommended)**
+**🚀 Quick Start**
 ```bash
-# Windows
-start_receiver.bat
+# Basic usage (sample implementation)
+python sample_receiver.py
 
-# Linux/macOS
-./start_receiver.sh
-```
+# With features
+python sample_receiver.py --timestamp --save logs.txt
 
-**⚙️ Advanced Usage**
-```bash
-# Basic usage
-python log_receiver.py
-
-# With timestamp and file saving
-python log_receiver.py --timestamp --save logs.txt
-
-# Custom host/port
-python log_receiver.py --host 192.168.1.100 --port 8888
+# Use sample scripts (optional)
+sample_receiver.bat    # Windows
+./sample_receiver.sh   # Linux/macOS
 ```
 
 **📋 Features**
 - ✨ **Color-coded logs** by level (trace, debug, info, warning, error, critical)
-- ⏰ **Timestamp display** with millisecond precision
+- ⏰ **Timestamp display** with microsecond precision
 - 💾 **File saving** with automatic ANSI code cleanup
 - 🎯 **JSON parsing** with structured log display
 - 🛡️ **Error handling** for malformed messages
@@ -141,3 +131,9 @@ This project was developed with AI assistance from Claude (Anthropic).
 MIT License - see [LICENSE](LICENSE) file for details.
 
 Copyright (c) 2025 synctam (synctam@gmail.com)
+
+---
+
+**📖 Language / 言語**
+- [English](README.md) (This file)
+- [日本語](README_ja.md)
