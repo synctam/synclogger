@@ -7,9 +7,9 @@ A real-time UDP logging addon for Godot Engine that sends logs over the network 
 - 🚀 **Non-blocking**: Logs sent via UDP without affecting game performance
 - ⚡ **Real-time**: Instant log transmission for live debugging
 - 🎯 **Simple API**: Easy-to-use logging interface
-- 🔧 **Configurable**: Flexible setup with JSON config files
+- 🔧 **Configurable**: Flexible setup with start/stop API
 - 🛡️ **Stable**: Comprehensive test coverage (60+ tests)
-- 🎮 **Game-ready**: Automatic frame numbers and timestamps
+- 🎮 **Game-ready**: Automatic frame tracking with process & physics frame numbers
 
 ## 📦 Installation
 
@@ -30,14 +30,18 @@ A real-time UDP logging addon for Godot Engine that sends logs over the network 
 ```gdscript
 # Setup (usually in _ready())
 SyncLogger.setup("127.0.0.1", 9999)
+SyncLogger.start()  # Start logging
 
 # Send logs
 SyncLogger.info("Player spawned")
 SyncLogger.warning("Low health: %d" % health)
 SyncLogger.error("Connection failed")
 
-# Cleanup (usually in _exit_tree())
-await SyncLogger.shutdown()
+# Stop logging (usually in _exit_tree())
+SyncLogger.stop()
+
+# Optional: Restart logging
+SyncLogger.restart()
 ```
 
 ### Log Receiver
@@ -65,24 +69,45 @@ sample_receiver.bat    # Windows
 ## 📚 API Reference
 
 ### Core Methods
-- `setup(host: String, port: int)` - Initialize UDP connection
-- `info(message: String)` - Send info level log
-- `debug(message: String)` - Send debug level log
-- `warning(message: String)` - Send warning level log
-- `error(message: String)` - Send error level log
-- `critical(message: String)` - Send critical level log
-- `shutdown()` - Clean shutdown (returns awaitable)
+- `setup(host: String = "127.0.0.1", port: int = 9999)` - Configure connection settings (no connection made)
+- `start()` - Start UDP connection and enable logging
+- `stop()` - Stop UDP connection and disable logging
+- `restart()` - Restart connection (stop + start)
+- `info(message: String, category: String = "general")` - Send info level log
+- `debug(message: String, category: String = "general")` - Send debug level log
+- `warning(message: String, category: String = "general")` - Send warning level log
+- `error(message: String, category: String = "general")` - Send error level log
+- `critical(message: String, category: String = "general")` - Send critical level log
+- `trace(message: String, category: String = "general")` - Send trace level log
 
-### Configuration
+### Security Features
 ```gdscript
-# Optional: JSON config file at user://.synclogger.json
+# Secure start/stop API - no network communication until explicitly started
+SyncLogger.setup("127.0.0.1", 9999)  # Configuration only (no connection)
+SyncLogger.start()                    # Explicit network start
+# ... logging happens ...
+SyncLogger.stop()                     # Complete network shutdown
+```
+
+### Frame Information
+Every log automatically includes precise frame tracking for game debugging:
+
+```json
 {
-    "host": "127.0.0.1",
-    "port": 9999,
-    "system_capture": true,
-    "capture_errors": true
+  "timestamp": 1722556800.123,
+  "frame": 12345,           // Process frame number
+  "physics_frame": 6789,    // Physics frame number
+  "level": "info",
+  "category": "gameplay",
+  "message": "Player spawned"
 }
 ```
+
+**Benefits for Game Development:**
+- 🎯 **Frame-perfect debugging**: Correlate logs with specific game frames
+- ⏱️ **Performance analysis**: Track frame timing issues
+- 🔍 **Physics debugging**: Separate process and physics frame tracking
+- 📊 **Timeline reconstruction**: Rebuild exact game state progression
 
 ## 📋 Requirements
 
@@ -113,18 +138,36 @@ sample_receiver.bat    # Windows
 
 **System log capture (Godot 4.5+)**
 ```gdscript
-# Disable system capture if needed
-SyncLogger.set_system_capture_enabled(false)
+# System capture is automatically enabled with start()
+# To disable manually:
+SyncLogger.set_capture_errors(false)
+SyncLogger.set_capture_messages(false)
 ```
 
 ## 🤝 Development
 
 This project was developed with AI assistance from Claude (Anthropic).
 
+### Development Environment (dev branch)
+- **Testing Framework**: GUT (Godot Unit Test)
+- **Test Suite**: 60+ comprehensive tests
+- **Documentation**: Located in `docs/` directory
+- **Release Workflow**: See `docs/RELEASE_WORKFLOW.md`
+
+### Development Commands
+```bash
+# Run all tests
+../bin/godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests -gexit
+
+# Code quality check
+gdlint addons/synclogger/ tests/
+```
+
 ### Contributing
 - **Issues**: Report bugs or feature requests
 - **Pull Requests**: Contributions welcome
-- **Testing**: Run tests with GUT framework
+- **Testing**: All tests must pass before merge
+- **Documentation**: Update relevant docs when adding features
 
 ## 📄 License
 

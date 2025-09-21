@@ -7,9 +7,9 @@ Godot Engine用のリアルタイムUDPログ送信アドオン - ゲームル�
 - 🚀 **ノンブロッキング**: ゲームパフォーマンスに影響せずUDP経由でログ送信
 - ⚡ **リアルタイム**: ライブデバッグのための即座のログ転送
 - 🎯 **シンプルAPI**: 使いやすいログインターフェース
-- 🔧 **設定可能**: JSONコンフィグファイルによる柔軟な設定
+- 🔧 **設定可能**: start/stop APIによる柔軟な設定
 - 🛡️ **安定性**: 包括的なテストカバレッジ（60+テスト）
-- 🎮 **ゲーム対応**: 自動フレーム番号・タイムスタンプ付与
+- 🎮 **ゲーム対応**: プロセス・物理フレーム番号の自動追跡
 
 ## 📦 インストール
 
@@ -30,14 +30,18 @@ Godot Engine用のリアルタイムUDPログ送信アドオン - ゲームル�
 ```gdscript
 # セットアップ（通常は_ready()内）
 SyncLogger.setup("127.0.0.1", 9999)
+SyncLogger.start()  # ログ開始
 
 # ログ送信
 SyncLogger.info("プレイヤーがスポーン")
 SyncLogger.warning("体力低下: %d" % health)
 SyncLogger.error("接続失敗")
 
-# クリーンアップ（通常は_exit_tree()内）
-await SyncLogger.shutdown()
+# ログ停止（通常は_exit_tree()内）
+SyncLogger.stop()
+
+# オプション: ログ再開
+SyncLogger.restart()
 ```
 
 ### ログレシーバー
@@ -65,24 +69,45 @@ sample_receiver.bat    # Windows
 ## 📚 API リファレンス
 
 ### コアメソッド
-- `setup(host: String, port: int)` - UDP接続を初期化
-- `info(message: String)` - infoレベルログを送信
-- `debug(message: String)` - debugレベルログを送信
-- `warning(message: String)` - warningレベルログを送信
-- `error(message: String)` - errorレベルログを送信
-- `critical(message: String)` - criticalレベルログを送信
-- `shutdown()` - クリーンシャットダウン（awaitableを返す）
+- `setup(host: String = "127.0.0.1", port: int = 9999)` - 接続設定を構成（接続はしない）
+- `start()` - UDP接続を開始しログを有効化
+- `stop()` - UDP接続を停止しログを無効化
+- `restart()` - 接続を再起動（stop + start）
+- `info(message: String, category: String = "general")` - infoレベルログを送信
+- `debug(message: String, category: String = "general")` - debugレベルログを送信
+- `warning(message: String, category: String = "general")` - warningレベルログを送信
+- `error(message: String, category: String = "general")` - errorレベルログを送信
+- `critical(message: String, category: String = "general")` - criticalレベルログを送信
+- `trace(message: String, category: String = "general")` - traceレベルログを送信
 
-### 設定
+### セキュリティ機能
 ```gdscript
-# オプション: user://.synclogger.json のJSONコンフィグファイル
+# 安全なstart/stop API - 明示的に開始するまでネットワーク通信なし
+SyncLogger.setup("127.0.0.1", 9999)  # 設定のみ（接続なし）
+SyncLogger.start()                    # 明示的なネットワーク開始
+# ... ログ処理 ...
+SyncLogger.stop()                     # 完全なネットワーク停止
+```
+
+### フレーム情報
+すべてのログにゲームデバッグ用の精密なフレーム追跡が自動付与されます：
+
+```json
 {
-    "host": "127.0.0.1",
-    "port": 9999,
-    "system_capture": true,
-    "capture_errors": true
+  "timestamp": 1722556800.123,
+  "frame": 12345,           // プロセスフレーム番号
+  "physics_frame": 6789,    // 物理フレーム番号
+  "level": "info",
+  "category": "gameplay",
+  "message": "プレイヤーがスポーン"
 }
 ```
+
+**ゲーム開発での利点：**
+- 🎯 **フレーム精密デバッグ**: ログを特定のゲームフレームと関連付け
+- ⏱️ **パフォーマンス分析**: フレームタイミング問題の追跡
+- 🔍 **物理デバッグ**: プロセスと物理フレームの分離追跡
+- 📊 **タイムライン再構築**: 正確なゲーム状態進行の再現
 
 ## 📋 要件
 
@@ -113,18 +138,36 @@ sample_receiver.bat    # Windows
 
 **システムログキャプチャ（Godot 4.5+）**
 ```gdscript
-# 必要に応じてシステムキャプチャを無効化
-SyncLogger.set_system_capture_enabled(false)
+# システムキャプチャはstart()で自動有効化
+# 手動で無効にする場合：
+SyncLogger.set_capture_errors(false)
+SyncLogger.set_capture_messages(false)
 ```
 
 ## 🤝 開発
 
 このプロジェクトはClaude（Anthropic）のAI支援により開発されました。
 
+### 開発環境（devブランチ）
+- **テストフレームワーク**: GUT (Godot Unit Test)
+- **テストスイート**: 60+の包括的テスト
+- **ドキュメント**: `docs/` ディレクトリに配置
+- **リリースワークフロー**: `docs/RELEASE_WORKFLOW.md` を参照
+
+### 開発コマンド
+```bash
+# 全テスト実行
+../bin/godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests -gexit
+
+# コード品質チェック
+gdlint addons/synclogger/ tests/
+```
+
 ### 貢献
 - **Issues**: バグレポートや機能要求
 - **Pull Requests**: 貢献歓迎
-- **テスト**: GUTフレームワークでテスト実行
+- **テスト**: マージ前に全テスト合格必須
+- **ドキュメント**: 機能追加時は関連ドキュメントも更新
 
 ## 📄 ライセンス
 

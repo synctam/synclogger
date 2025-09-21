@@ -24,7 +24,11 @@ class SyncCustomLogger:
 		if not _enabled or not _capture_messages:
 			return
 
-		var level = "error" if error else "info"
+		# 安全性チェック: _sync_mainが有効かつ_send_logメソッドが存在するか
+		if not _sync_main or not _sync_main.has_method("_send_log"):
+			return
+
+		var level: String = "error" if error else "info"
 		_sync_main._send_log(message, level, "godot_system", true)
 
 	func _log_error(
@@ -40,9 +44,13 @@ class SyncCustomLogger:
 		if not _enabled or not _capture_errors:
 			return
 
+		# 安全性チェック: _sync_mainが有効かつ_send_logメソッドが存在するか
+		if not _sync_main or not _sync_main.has_method("_send_log"):
+			return
+
 		# エラー情報を構造化
-		var error_msg = "ERROR in %s:%d (%s): %s" % [file, line, function, rationale]
-		var error_level = _convert_error_type(error_type)
+		var error_msg: String = "ERROR in %s:%d (%s): %s" % [file, line, function, rationale]
+		var error_level: String = _convert_error_type(error_type)
 
 		_sync_main._send_log(error_msg, error_level, "godot_error", true)
 
@@ -78,18 +86,13 @@ class SyncCustomLogger:
 # 推奨パターン: SyncLogger.setup("127.0.0.1", 9999) → SyncLogger.log("message")
 
 # 定数定義
-const UDPSender = preload("res://addons/synclogger/udp_sender.gd")
-const CONFIG_FILENAME = ".synclogger.json"
-const DEFAULT_CONFIG = {
-	"host": "127.0.0.1",
-	"port": 9999,
-	"system_capture": true,
-	"capture_errors": true,
-	"capture_messages": true
-}
+# 設定ファイル機能は新start/stop APIでは不要のため削除済み
 
 # 変数定義
-var _udp_sender: UDPSender
+var _host: String = "127.0.0.1"  # デフォルトホスト
+var _port: int = 9999  # デフォルトポート
+var _is_running: bool = false  # 実行状態フラグ
+var _udp_sender: UDPSender = null  # UDP送信オブジェクト
 
 # サニタイズ設定
 var _sanitize_ansi: bool = true  # デフォルト: ANSI文字を除去
@@ -107,12 +110,11 @@ var _logger_registered: bool = false
 var _logger_support_available: bool = false
 var _custom_logger: SyncCustomLogger
 
-# 設定ファイル機能
-var _config_file_enabled: bool = false
+# 設定ファイル機能は新start/stop APIでは不要のため削除済み
 
 
-func _init():
-	_udp_sender = UDPSender.new()
+func _init() -> void:
+	# UDP送信オブジェクトは start() 時に作成
 	_check_logger_support()
 
 	# RegEx初期化（パフォーマンス最適化）
@@ -127,41 +129,74 @@ func _init():
 		_custom_logger = SyncCustomLogger.new(self)
 
 
-func _ready():
-	_try_load_config_file()
+func _ready() -> void:
+	# 新start/stop APIでは設定ファイル自動読み込み不要
+	pass
 
 
 # Godot 4.5+ Logger機能の可用性チェック（統合版）
-func _check_logger_support():
+func _check_logger_support() -> void:
 	if ClassDB.class_exists("Logger"):
 		_logger_support_available = true
 	else:
 		_logger_support_available = false
 
 
-func setup(host: String, port: int) -> void:
-	# 直接実装: UDPSenderを使用
-	_udp_sender.setup(host, port)
+func setup(host: String = "127.0.0.1", port: int = 9999) -> void:
+	# 設定のみ更新（UDP接続はしない）
+	_host = host
+	_port = port
 
 	# サニタイズ設定を確実に有効化（ANSI・制御文字除去）
 	_sanitize_ansi = true
 	_sanitize_control_chars = true
+
+
+func start() -> void:
+	if _is_running:
+		# 既に実行中の場合は何もしない（サイレント）
+		return
+
+	# UDP接続を確立
+	_udp_sender = UDPSender.new()
+	_udp_sender.setup(_host, _port)
+	_is_running = true
 
 	# システムログキャプチャを自動設定（Godot 4.5+のみ）
 	if _logger_support_available:
 		_setup_system_log_capture()
 
 
+func stop() -> void:
+	if not _is_running:
+		return
+
+	# UDP接続を切断
+	if _udp_sender:
+		_udp_sender.close()
+		_udp_sender = null
+	_is_running = false
+
+	# システムログキャプチャを無効化
+	_cleanup_system_log_capture()
+
+
+func restart() -> void:
+	stop()
+	start()
+
+
 func get_host() -> String:
-	return _udp_sender.get_host() if _udp_sender != null else ""
+	return _host
 
 
 func get_port() -> int:
-	return _udp_sender.get_port() if _udp_sender != null else 0
+	return _port
 
 
 func is_setup() -> bool:
-	return _udp_sender != null and _udp_sender.is_setup()
+	# 設定がデフォルト以外に設定されているかを確認
+	return _host != "" and _port > 0
 
 
 func set_test_mode(enabled: bool) -> void:
@@ -170,9 +205,9 @@ func set_test_mode(enabled: bool) -> void:
 		_udp_sender.set_test_mode(enabled)
 
 
-# 互換性API（統合・簡素化）
+# 実行状態の確認
 func is_running() -> bool:
-	return _udp_sender != null and _udp_sender.is_setup()
+	return _is_running
 
 
 func get_queue_size() -> int:
@@ -218,7 +253,7 @@ func _send_log(message: String, level: String, category: String, is_system: bool
 		return false
 
 	# システムログの場合は特別なプレフィックスを追加
-	var processed_message = message
+	var processed_message: String = message
 	if is_system:
 		processed_message = "[SYSTEM] " + message
 
@@ -228,7 +263,7 @@ func _send_log(message: String, level: String, category: String, is_system: bool
 		processed_message = processed_message.left(MAX_MESSAGE_SIZE) + "...[truncated]"
 
 	# JSONコントロール文字問題修正: ANSIエスケープシーケンスを先に除去
-	var sanitized_message = _sanitize_message_for_json(processed_message)
+	var sanitized_message: String = _sanitize_message_for_json(processed_message)
 
 	# 改行処理問題修正: サニタイズ後にメッセージをクリーンアップ
 	sanitized_message = sanitized_message.strip_edges()
@@ -237,8 +272,8 @@ func _send_log(message: String, level: String, category: String, is_system: bool
 	if sanitized_message.is_empty() or sanitized_message.length() <= 2:
 		return false
 
-	var log_data = _create_log_data(sanitized_message, level, category)
-	var json_string = JSON.stringify(log_data)
+	var log_data: Dictionary = _create_log_data(sanitized_message, level, category)
+	var json_string: String = JSON.stringify(log_data)
 	return _udp_sender.send(json_string)
 
 
@@ -266,7 +301,7 @@ func is_sanitize_control_chars_enabled() -> bool:
 
 # JSONエンコード用メッセージサニタイズ
 func _sanitize_message_for_json(message: String) -> String:
-	var cleaned = message
+	var cleaned: String = message
 
 	# ANSI文字除去（設定可能）
 	if _sanitize_ansi:
@@ -281,13 +316,13 @@ func _sanitize_message_for_json(message: String) -> String:
 
 # ANSI エスケープシーケンス除去（最適化済み）
 func _remove_ansi_sequences(message: String) -> String:
-	var cleaned = message
+	var cleaned: String = message
 
 	# 効率的なANSI除去: RegExを1回だけ使用
 	cleaned = _ansi_regex.sub(cleaned, "", true)
 
 	# ESC文字の除去
-	var esc_char = char(0x1b)
+	var esc_char: String = char(0x1b)
 	cleaned = cleaned.replace(esc_char, "")
 
 	return cleaned
@@ -375,32 +410,11 @@ func get_compatibility_info() -> Dictionary:
 		"logger_support": _logger_support_available,
 		"interceptor_active": _logger_registered,
 		"system_capture_available": _logger_support_available,
-		"config_file_enabled": _config_file_enabled
+		"config_file_enabled": false
 	}
 
 
-# 任意機能: 設定ファイル機能
-func load_config_file() -> bool:
-	"""Manual config file loading (optional)"""
-	_try_load_config_file()
-	return _config_file_enabled
-
-
-func is_config_file_enabled() -> bool:
-	return _config_file_enabled
-
-
-func get_config_file_path() -> String:
-	return "user://" + CONFIG_FILENAME
-
-
-# テスト用の状態リセット機能
-func _reset_config_state() -> void:
-	"""テスト用: 設定ファイル状態をリセットして再読み込み"""
-	_config_file_enabled = false
-	if _udp_sender:
-		_udp_sender.close()
-	_try_load_config_file()
+# 設定ファイル機能は新start/stop APIでは不要のため削除済み
 
 
 # 内部実装（Godot 4.5+のみ）- 統合版
@@ -427,81 +441,9 @@ func _cleanup_system_log_capture() -> void:
 		_logger_registered = false
 
 
-# 終了処理
-func shutdown() -> void:
-	_cleanup_system_log_capture()
-	if _udp_sender:
-		_udp_sender.close()
+# 設定ファイル機能は新start/stop APIでは不要のため削除済み
 
 
-# 任意機能: 設定ファイル自動読み込み
-func _try_load_config_file() -> void:
-	var config_path = "user://" + CONFIG_FILENAME
-	if FileAccess.file_exists(config_path):
-		var config = _load_simple_config(config_path)
-		_setup_from_config(config)
-		_config_file_enabled = true
-	else:
-		_config_file_enabled = false
-
-func _load_simple_config(path: String) -> Dictionary:
-	var file = FileAccess.open(path, FileAccess.READ)
-	if not file:
-		return DEFAULT_CONFIG.duplicate()
-
-	var content = file.get_as_text().strip_edges()
-	file.close()
-
-	if content.is_empty():
-		_write_default_config(path)
-		return DEFAULT_CONFIG.duplicate()
-
-	var json = JSON.new()
-	var parse_result = json.parse(content)
-
-	if parse_result != OK or not json.data is Dictionary:
-		_write_default_config(path)
-		return DEFAULT_CONFIG.duplicate()
-
-	# デフォルト値とマージ
-	var final_config = DEFAULT_CONFIG.duplicate()
-	for key in json.data:
-		if final_config.has(key):
-			final_config[key] = json.data[key]
-
-	return final_config
 
 
-func _write_default_config(path: String) -> void:
-	var file = FileAccess.open(path, FileAccess.WRITE)
-	if not file:
-			return
 
-	# コメント付きJSONで書き込み
-	var default_content = """{
-	"_comment": "SyncLogger Configuration - Edit as needed",
-	"host": "127.0.0.1",
-	"port": 9999,
-	"system_capture": true,
-	"capture_errors": true,
-	"capture_messages": true
-}"""
-
-	file.store_string(default_content)
-	file.close()
-
-
-func _setup_from_config(config: Dictionary) -> void:
-	# 基本設定
-	setup(config.get("host", "127.0.0.1"), config.get("port", 9999))
-
-	# システムキャプチャ設定（Godot 4.5+のみ）
-	if _logger_support_available:
-		if config.has("system_capture"):
-			_system_capture_enabled = config.system_capture
-			if config.system_capture:
-				enable_system_capture()
-		if config.has("capture_errors"):
-			set_capture_errors(config.capture_errors)
-		if config.has("capture_messages"):
-			set_capture_messages(config.capture_messages)

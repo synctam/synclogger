@@ -9,7 +9,7 @@ var _is_connected: bool = false
 var _test_mode: bool = false  # テスト環境での接続エラー回避
 
 
-func _init():
+func _init() -> void:
 	_udp_socket = PacketPeerUDP.new()
 
 
@@ -24,7 +24,7 @@ func setup(host: String, port: int) -> void:
 
 	# 新しい接続を確立
 	if not _host.is_empty() and _port > 0:
-		var result = _udp_socket.connect_to_host(_host, _port)
+		var result: Error = _udp_socket.connect_to_host(_host, _port)
 		_is_connected = (result == OK)
 
 	_is_setup = true
@@ -55,8 +55,8 @@ func send(data: String) -> bool:
 	if not _ensure_connection():
 		return false
 
-	var bytes = data.to_utf8_buffer()
-	var result = _udp_socket.put_packet(bytes)
+	var bytes: PackedByteArray = data.to_utf8_buffer()
+	var result: Error = _udp_socket.put_packet(bytes)
 
 	# 送信失敗時は接続を再確立
 	if result != OK:
@@ -97,7 +97,7 @@ func _ensure_connection() -> bool:
 	if _host.is_empty() or _port <= 0:
 		return false
 
-	var result = _udp_socket.connect_to_host(_host, _port)
+	var result: Error = _udp_socket.connect_to_host(_host, _port)
 	_is_connected = (result == OK)
 	return _is_connected
 
@@ -111,6 +111,6 @@ func _retry_send(data: String, retry_count: int = 0) -> bool:
 	if not _ensure_connection():
 		return false
 
-	var bytes = data.to_utf8_buffer()
-	var result = _udp_socket.put_packet(bytes)
+	var bytes: PackedByteArray = data.to_utf8_buffer()
+	var result: Error = _udp_socket.put_packet(bytes)
 	return result == OK
