@@ -66,11 +66,14 @@ git commit -m "feat: [dev反映] メインアドオン更新"
 # README更新が含まれる場合
 git checkout dev -- README.md README_ja.md
 
-# 必要に応じて手動調整（release向け最適化）
-# 例: devブランチ固有の情報を削除
+# release向け最適化: Development Environment セクションを削除
+# 以下の部分を手動で削除またはコメントアウト:
+# - "### Development Environment (dev branch)"
+# - "### Development Commands"
+# - dev環境固有の記述
 
 git add README*.md
-git commit -m "docs: README更新"
+git commit -m "docs: README更新（release向け最適化）"
 ```
 
 #### 2.3 サンプルレシーバー更新が必要な場合
