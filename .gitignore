@@ -30,6 +30,7 @@ dist/
 
 # Logs
 *.log
+*.txt
 user://
 
 # Additional debug files
@@ -39,3 +40,8 @@ godot_mcp
 .claude
 .serena
 temp
+
+# Test receiver temporary files
+test_receiver.*
+logs.txt
+test_logs.txt
