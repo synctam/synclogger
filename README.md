@@ -13,11 +13,11 @@ A real-time UDP logging addon for Godot Engine that sends logs over the network 
 
 ## 📦 Installation
 
-### Via Godot Asset Library (Recommended)
-1. Open Godot Project Settings
-2. Go to "AssetLib" tab
-3. Search for "SyncLogger"
-4. Download and install
+### ~~Via Godot Asset Library (Recommended)~~
+1. ~~Open Godot Project Settings~~
+2. ~~Go to "AssetLib" tab~~
+3. ~~Search for "SyncLogger"~~
+4. ~~Download and install~~
 
 ### Manual Installation
 1. Download this repository
@@ -179,4 +179,5 @@ Copyright (c) 2025 synctam (synctam@gmail.com)
 
 **📖 Language / 言語**
 - [English](README.md) (This file)
+
 - [日本語](README_ja.md)
