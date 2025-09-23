@@ -13,11 +13,11 @@ Godot Engine用のリアルタイムUDPログ送信アドオン - ゲームル�
 
 ## 📦 インストール
 
-### Godot Asset Library経由（推奨）
-1. Godotプロジェクト設定を開く
-2. "AssetLib"タブに移動
-3. "SyncLogger"を検索
-4. ダウンロード・インストール
+### Godot Asset Library経由（推奨） --- まだ、Asset Library に登録していません。
+1. ~~Godotプロジェクト設定を開く~~
+2. ~~"AssetLib"タブに移動~~
+3. ~~"SyncLogger"を検索~~
+4. ~~ダウンロード・インストール~~
 
 ### 手動インストール
 1. このリポジトリをダウンロード
